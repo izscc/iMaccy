@@ -1,6 +1,6 @@
 import XCTest
 import Defaults
-@testable import Maccy
+@testable import iMaccy
 
 // swiftlint:disable force_try
 @MainActor

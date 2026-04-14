@@ -1,8 +1,9 @@
 import AppKit
+import Defaults
 import Observation
 import SwiftData
 
-enum LibraryScope: String, CaseIterable, Identifiable, Sendable {
+enum LibraryScope: String, CaseIterable, Identifiable, Sendable, Defaults.Serializable {
   case history
   case prompt
   case favorites

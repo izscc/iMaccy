@@ -1,6 +1,9 @@
 import Cocoa
 
 class About {
+  private let repositoryURL = URL(string: "https://github.com/izscc/iMaccy")!
+  private let issuesURL = URL(string: "https://github.com/izscc/iMaccy/issues")!
+
   private let familyCredits = NSAttributedString(
     string: "Special thank you to Tonia, Anna & Guy! ❤️",
     attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor]
@@ -14,11 +17,20 @@ class About {
   }
 
   private var links: NSMutableAttributedString {
-    let string = NSMutableAttributedString(string: "Website│GitHub│Support",
-                                           attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor])
-    string.addAttribute(.link, value: "https://maccy.app", range: NSRange(location: 0, length: 7))
-    string.addAttribute(.link, value: "https://github.com/p0deje/Maccy", range: NSRange(location: 8, length: 6))
-    string.addAttribute(.link, value: "mailto:support@maccy.app", range: NSRange(location: 15, length: 7))
+    let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
+    let string = NSMutableAttributedString()
+
+    func appendLink(title: String, url: URL) {
+      let start = string.length
+      string.append(NSAttributedString(string: title, attributes: attributes))
+      string.addAttribute(.link, value: url, range: NSRange(location: start, length: title.count))
+    }
+
+    appendLink(title: "主页", url: repositoryURL)
+    string.append(NSAttributedString(string: "│", attributes: attributes))
+    appendLink(title: "GitHub", url: repositoryURL)
+    string.append(NSAttributedString(string: "│", attributes: attributes))
+    appendLink(title: "反馈", url: issuesURL)
     return string
   }
 

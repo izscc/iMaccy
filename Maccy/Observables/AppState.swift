@@ -21,7 +21,7 @@ class AppState: Sendable {
   let promptFilter: PromptFilterStateStore
   let promptOrganizer: PromptOrganizer
 
-  var currentScope: LibraryScope = .history {
+  var currentScope: LibraryScope = Defaults[.defaultLibraryScope] {
     didSet {
       guard oldValue != currentScope else { return }
       synchronizePromptFilterScope()
@@ -53,7 +53,9 @@ class AppState: Sendable {
     visiblePromptItems.filter { selectedPromptIDs.contains($0.id) }
   }
   var recentPromptBookmarks: [PromptCategory] {
-    promptCategoryStore.recentBookmarks()
+    let limit = Defaults[.promptRecentBookmarkLimit]
+    guard limit > 0 else { return [] }
+    return promptCategoryStore.recentBookmarks(limit: limit)
   }
 
   var scrollTarget: UUID?
@@ -146,6 +148,7 @@ class AppState: Sendable {
     promptCategoryStore.load()
     promptTagStore.load()
     promptLibrary.load()
+    currentScope = Defaults[.defaultLibraryScope]
     popup.needsResize = true
   }
 
@@ -400,7 +403,15 @@ class AppState: Sendable {
     return promptTagStore.tags(for: item.id)
   }
 
+  func promptTagSummary(for item: PromptItem?) -> [PromptTag] {
+    guard Defaults[.showPromptTagSummary] else { return [] }
+    return promptTags(for: item)
+  }
+
   func promptCategoryBadgeName(for item: PromptItem?) -> String? {
+    guard Defaults[.showPromptCategoryBadge] else {
+      return nil
+    }
     guard let item,
           let categoryID = item.categoryID,
           !promptCategoryStore.isRootCategoryID(categoryID) else {
@@ -560,6 +571,13 @@ class AppState: Sendable {
             toolbarIcon: NSImage.externaldrive!
           ) {
             StorageSettingsPane()
+          },
+          Settings.Pane(
+            identifier: Settings.PaneIdentifier.prompt,
+            title: "Prompt",
+            toolbarIcon: NSImage(systemSymbolName: "text.quote", accessibilityDescription: nil) ?? NSImage.gearshape!
+          ) {
+            PromptSettingsPane()
           },
           Settings.Pane(
             identifier: Settings.PaneIdentifier.appearance,

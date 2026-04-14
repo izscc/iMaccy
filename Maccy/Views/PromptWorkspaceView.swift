@@ -60,7 +60,7 @@ struct PromptWorkspaceView: View {
           emptyState: emptyState,
           bookmarks: appState.promptCategoryStore.bookmarkCategories,
           recentBookmarks: appState.recentPromptBookmarks,
-          tagsForItem: { appState.promptTags(for: $0) },
+        tagsForItem: { appState.promptTagSummary(for: $0) },
           badgeNameForItem: { appState.promptCategoryBadgeName(for: $0) },
           onSelect: { appState.selectPromptListItem($0) },
           onToggleMultiSelection: { appState.togglePromptMultiSelection($0) },
@@ -190,14 +190,11 @@ struct PromptWorkspaceView: View {
         )
       }
     }
-    .alert("批量删除 Prompt", isPresented: $showBulkDeleteConfirmation) {
-      Button("取消", role: .cancel) {}
-      Button("删除", role: .destructive) {
-        appState.bulkDeleteSelectedPrompts()
-      }
-    } message: {
-      Text("确定要删除已选中的 \(appState.selectedPromptIDs.count) 个 Prompt 吗？此操作无法撤销。")
-    }
+    .modifier(PromptBulkDeleteAlert(
+      isPresented: $showBulkDeleteConfirmation,
+      selectionCount: appState.selectedPromptIDs.count,
+      onDelete: { appState.bulkDeleteSelectedPrompts() }
+    ))
     .alert("操作失败", isPresented: Binding(
       get: { errorMessage != nil },
       set: { if !$0 { errorMessage = nil } }
@@ -431,6 +428,31 @@ private struct PromptBulkActionBar: View {
     }
     .buttonStyle(.bordered)
     .font(.caption)
+  }
+}
+
+private struct PromptBulkDeleteAlert: ViewModifier {
+  @Binding var isPresented: Bool
+  let selectionCount: Int
+  let onDelete: () -> Void
+
+  @Default(.confirmPromptBulkDelete) private var confirmPromptBulkDelete
+
+  func body(content: Content) -> some View {
+    content
+      .onChange(of: isPresented) {
+        guard isPresented, !confirmPromptBulkDelete else { return }
+        isPresented = false
+        onDelete()
+      }
+      .alert("批量删除 Prompt", isPresented: $isPresented) {
+        Button("取消", role: .cancel) {}
+        Button("删除", role: .destructive) {
+          onDelete()
+        }
+      } message: {
+        Text("确定要删除已选中的 \(selectionCount) 个 Prompt 吗？此操作无法撤销。")
+      }
   }
 }
 

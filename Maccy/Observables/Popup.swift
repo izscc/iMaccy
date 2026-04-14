@@ -25,6 +25,7 @@ class Popup {
   }
 
   func open(height: CGFloat, at popupPosition: PopupPosition = Defaults[.popupPosition]) {
+    AppState.shared.currentScope = Defaults[.defaultLibraryScope]
     AppState.shared.appDelegate?.panel.open(height: height, at: popupPosition)
   }
 

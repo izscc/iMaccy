@@ -5,6 +5,8 @@ import SwiftUI
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+  private let legacyBundleIdentifier = "org.p0deje.Maccy"
+  private let newBundleIdentifier = "in.zscc.iMaccy"
   var panel: FloatingPanel<ContentView>!
 
   @objc
@@ -34,6 +36,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       .automaticallyChecksForUpdates = false
     }
     #endif
+
+    migrateUserDefaults()
 
     // Bridge FloatingPanel via AppDelegate.
     AppState.shared.appDelegate = self
@@ -90,12 +94,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
-    migrateUserDefaults()
     disableUnusedGlobalHotkeys()
 
     panel = FloatingPanel(
       contentRect: NSRect(origin: .zero, size: Defaults[.windowSize]),
-      identifier: Bundle.main.bundleIdentifier ?? "org.p0deje.Maccy",
+      identifier: Bundle.main.bundleIdentifier ?? newBundleIdentifier,
       statusBarButton: statusItem.button
     ) {
       ContentView()
@@ -114,6 +117,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   private func migrateUserDefaults() {
+    migrateLegacyDefaultsDomain()
+
     if Defaults[.migrations]["2024-07-01-version-2"] != true {
       // Start 2.x from scratch.
       Defaults.reset(.migrations)
@@ -136,6 +141,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // - saratovSeparator
     // - maxMenuItemLength
     // - maxMenuItems
+  }
+
+  private func migrateLegacyDefaultsDomain() {
+    guard let currentBundleIdentifier = Bundle.main.bundleIdentifier ?? Optional(newBundleIdentifier) else {
+      return
+    }
+    guard currentBundleIdentifier != legacyBundleIdentifier else {
+      return
+    }
+    guard let legacyDomain = UserDefaults.standard.persistentDomain(forName: legacyBundleIdentifier) else {
+      return
+    }
+
+    var currentDomain = UserDefaults.standard.persistentDomain(forName: currentBundleIdentifier) ?? [:]
+    for (key, value) in legacyDomain where currentDomain[key] == nil {
+      currentDomain[key] = value
+    }
+    UserDefaults.standard.setPersistentDomain(currentDomain, forName: currentBundleIdentifier)
+    UserDefaults.standard.synchronize()
   }
 
   @objc
