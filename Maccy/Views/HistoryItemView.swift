@@ -9,6 +9,9 @@ struct HistoryItemView: View {
   private var bookmarks: [PromptCategory] {
     appState.promptCategoryStore.bookmarkCategories
   }
+  private var recentBookmarks: [PromptCategory] {
+    appState.recentPromptBookmarks
+  }
 
   var body: some View {
     ListItemView(
@@ -31,7 +34,17 @@ struct HistoryItemView: View {
           appState.archiveHistoryItemToPrompt(item.item)
         }
 
-        Menu("移动到 Prompt > 子书签") {
+        if !recentBookmarks.isEmpty {
+          Menu("移动到最近子书签") {
+            ForEach(recentBookmarks, id: \.id) { bookmark in
+              Button(bookmark.name) {
+                appState.archiveHistoryItemToPrompt(item.item, categoryID: bookmark.id)
+              }
+            }
+          }
+        }
+
+        Menu("移动到子书签") {
           if bookmarks.isEmpty {
             Button("暂无子书签") {}
               .disabled(true)

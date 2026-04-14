@@ -47,6 +47,7 @@ final class PromptCategory {
   var sortOrder: Int
   var isSystem: Bool
   var symbolName: String
+  var lastAssignedAt: Date?
 
   init(
     id: UUID = UUID(),
@@ -54,7 +55,8 @@ final class PromptCategory {
     parentID: UUID? = nil,
     sortOrder: Int = 0,
     isSystem: Bool = false,
-    symbolName: String = "folder"
+    symbolName: String = "folder",
+    lastAssignedAt: Date? = nil
   ) {
     self.id = id
     self.name = name
@@ -62,6 +64,7 @@ final class PromptCategory {
     self.sortOrder = sortOrder
     self.isSystem = isSystem
     self.symbolName = symbolName
+    self.lastAssignedAt = lastAssignedAt
   }
 }
 

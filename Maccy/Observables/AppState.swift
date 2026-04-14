@@ -29,8 +29,10 @@ class AppState: Sendable {
         popup.pinnedItemsHeight = 0
         popup.footerHeight = 0
         ensurePromptWindowWidth()
+        syncPromptSelectionAfterVisibilityChange()
+      } else {
+        selectDefaultItemForCurrentScope()
       }
-      selectDefaultItemForCurrentScope()
       popup.needsResize = true
     }
   }
@@ -40,6 +42,18 @@ class AppState: Sendable {
       guard oldValue?.id != selectedPromptItem?.id else { return }
       popup.needsResize = true
     }
+  }
+
+  var selectedPromptIDs: Set<UUID> = []
+  var leadPromptSelectionID: UUID?
+  var isPromptMultiSelecting: Bool {
+    currentScope != .history && selectedPromptIDs.count >= 2
+  }
+  var selectedPromptItems: [PromptItem] {
+    visiblePromptItems.filter { selectedPromptIDs.contains($0.id) }
+  }
+  var recentPromptBookmarks: [PromptCategory] {
+    promptCategoryStore.recentBookmarks()
   }
 
   var scrollTarget: UUID?
@@ -85,11 +99,7 @@ class AppState: Sendable {
         history.searchQuery = newValue
       case .prompt, .favorites:
         promptFilter.searchQuery = newValue
-        if newValue.isEmpty {
-          selectDefaultItemForCurrentScope()
-        } else {
-          highlightFirst()
-        }
+        syncPromptSelectionAfterVisibilityChange()
         popup.needsResize = true
       }
     }
@@ -112,6 +122,8 @@ class AppState: Sendable {
 
   private let about = About()
   private var settingsWindowController: SettingsWindowController?
+  @ObservationIgnored
+  private var preservePromptSelectionDuringSelectionChange = false
 
   init() {
     history = History.shared
@@ -140,10 +152,10 @@ class AppState: Sendable {
   func selectWithoutScrolling(_ item: UUID?) {
     history.selectedItem = nil
     footer.selectedItem = nil
-    selectedPromptItem = nil
 
     switch currentScope {
     case .history:
+      selectedPromptItem = nil
       if let item, let historyItem = history.items.first(where: { $0.id == item }) {
         history.selectedItem = historyItem
       } else if let item, let footerItem = footer.items.first(where: { $0.id == item }) {
@@ -152,6 +164,14 @@ class AppState: Sendable {
     case .prompt, .favorites:
       if let item, let promptItem = visiblePromptItems.first(where: { $0.id == item }) {
         selectedPromptItem = promptItem
+        if !preservePromptSelectionDuringSelectionChange {
+          selectedPromptIDs = [promptItem.id]
+          leadPromptSelectionID = promptItem.id
+        }
+      } else if !preservePromptSelectionDuringSelectionChange {
+        selectedPromptItem = nil
+        selectedPromptIDs.removeAll()
+        leadPromptSelectionID = nil
       }
     }
   }
@@ -191,6 +211,56 @@ class AppState: Sendable {
     }
     popup.close()
     activeSearchQuery = ""
+  }
+
+  func selectPromptListItem(_ item: PromptItem?) {
+    guard let item else {
+      selectedPromptIDs.removeAll()
+      leadPromptSelectionID = nil
+      selectedPromptItem = nil
+      return
+    }
+
+    preservePromptSelectionDuringSelectionChange = false
+    selection = item.id
+  }
+
+  func togglePromptMultiSelection(_ item: PromptItem) {
+    guard currentScope != .history else { return }
+
+    let alreadySelected = selectedPromptIDs.contains(item.id)
+
+    preservePromptSelectionDuringSelectionChange = true
+    selection = item.id
+    preservePromptSelectionDuringSelectionChange = false
+
+    if alreadySelected {
+      selectedPromptIDs.remove(item.id)
+      if selectedPromptIDs.isEmpty {
+        leadPromptSelectionID = nil
+        selectedPromptItem = nil
+        selection = nil
+      } else if leadPromptSelectionID == item.id {
+        let replacement = visiblePromptItems.first(where: { selectedPromptIDs.contains($0.id) })
+        leadPromptSelectionID = replacement?.id
+        selectedPromptItem = replacement
+        if let replacement {
+          preservePromptSelectionDuringSelectionChange = true
+          selection = replacement.id
+          preservePromptSelectionDuringSelectionChange = false
+        }
+      }
+    } else {
+      selectedPromptIDs.insert(item.id)
+      leadPromptSelectionID = item.id
+      selectedPromptItem = item
+    }
+
+    popup.needsResize = true
+  }
+
+  func isPromptItemSelected(_ item: PromptItem) -> Bool {
+    selectedPromptIDs.contains(item.id)
   }
 
   func deleteSelectedPrompt() {
@@ -288,6 +358,43 @@ class AppState: Sendable {
     refreshPromptData(selectPromptID: item.id)
   }
 
+  func bulkAssignPromptsToCategory(_ categoryID: UUID?) {
+    guard !selectedPromptItems.isEmpty else { return }
+    let leadID = leadPromptSelectionID
+    promptOrganizer.assignPrompts(selectedPromptItems, to: categoryID)
+    refreshPromptData(selectPromptID: leadID)
+  }
+
+  func bulkAddPromptTagIDs(_ tagIDs: Set<UUID>) {
+    guard !selectedPromptItems.isEmpty, !tagIDs.isEmpty else { return }
+    let leadID = leadPromptSelectionID
+    promptOrganizer.addTags(tagIDs, to: selectedPromptItems)
+    refreshPromptData(selectPromptID: leadID)
+  }
+
+  func bulkRemovePromptTagIDs(_ tagIDs: Set<UUID>) {
+    guard !selectedPromptItems.isEmpty, !tagIDs.isEmpty else { return }
+    let leadID = leadPromptSelectionID
+    promptOrganizer.removeTags(tagIDs, from: selectedPromptItems)
+    refreshPromptData(selectPromptID: leadID)
+  }
+
+  func bulkSetFavoriteForSelectedPrompts(_ value: Bool) {
+    guard !selectedPromptItems.isEmpty else { return }
+    let leadID = leadPromptSelectionID
+    promptOrganizer.setFavorite(value, for: selectedPromptItems)
+    refreshPromptData(selectPromptID: leadID)
+  }
+
+  func bulkDeleteSelectedPrompts() {
+    guard !selectedPromptItems.isEmpty else { return }
+    promptOrganizer.deletePrompts(selectedPromptItems)
+    selectedPromptIDs.removeAll()
+    leadPromptSelectionID = nil
+    syncPromptSelectionAfterVisibilityChange()
+    popup.needsResize = true
+  }
+
   func promptTags(for item: PromptItem?) -> [PromptTag] {
     guard let item else { return [] }
     return promptTagStore.tags(for: item.id)
@@ -302,9 +409,14 @@ class AppState: Sendable {
     return promptCategoryStore.categoryName(for: categoryID)
   }
 
+  func promptCategoryName(for item: PromptItem?) -> String {
+    guard let item else { return "Prompt 根目录" }
+    return promptCategoryStore.categoryName(for: item.categoryID)
+  }
+
   func setPromptCategoryFilter(_ categoryID: UUID?) {
     promptFilter.selectedCategoryID = categoryID
-    selectDefaultItemForCurrentScope()
+    syncPromptSelectionAfterVisibilityChange()
     popup.needsResize = true
   }
 
@@ -314,7 +426,7 @@ class AppState: Sendable {
     } else {
       promptFilter.selectedTagIDs.insert(tagID)
     }
-    selectDefaultItemForCurrentScope()
+    syncPromptSelectionAfterVisibilityChange()
     popup.needsResize = true
   }
 
@@ -325,10 +437,12 @@ class AppState: Sendable {
     promptLibrary.load()
 
     if currentScope != .history {
-      let targetID = selectPromptID.flatMap { id in
-        visiblePromptItems.contains(where: { $0.id == id }) ? id : nil
-      } ?? visiblePromptItems.first?.id
-      selection = targetID
+      if let selectPromptID, visiblePromptItems.contains(where: { $0.id == selectPromptID }) {
+        preservePromptSelectionDuringSelectionChange = false
+        selection = selectPromptID
+      } else {
+        syncPromptSelectionAfterVisibilityChange()
+      }
     }
     popup.needsResize = true
   }
@@ -507,7 +621,37 @@ class AppState: Sendable {
     case .history:
       selection = history.unpinnedItems.first?.id ?? history.pinnedItems.first?.id
     case .prompt, .favorites:
-      selection = visiblePromptItems.first?.id
+      syncPromptSelectionAfterVisibilityChange()
+    }
+  }
+
+  private func syncPromptSelectionAfterVisibilityChange() {
+    guard currentScope != .history else { return }
+
+    let visibleIDs = Set(visiblePromptItems.map(\.id))
+    if !selectedPromptIDs.isEmpty {
+      let kept = selectedPromptIDs.intersection(visibleIDs)
+      if !kept.isEmpty {
+        selectedPromptIDs = kept
+        let newLead = leadPromptSelectionID.flatMap { kept.contains($0) ? $0 : nil } ??
+          visiblePromptItems.first(where: { kept.contains($0.id) })?.id
+        leadPromptSelectionID = newLead
+        selectedPromptItem = visiblePromptItems.first(where: { $0.id == newLead })
+        preservePromptSelectionDuringSelectionChange = true
+        selection = newLead
+        preservePromptSelectionDuringSelectionChange = false
+        return
+      }
+    }
+
+    selectedPromptIDs.removeAll()
+    leadPromptSelectionID = nil
+    if let first = visiblePromptItems.first {
+      preservePromptSelectionDuringSelectionChange = false
+      selection = first.id
+    } else {
+      selectedPromptItem = nil
+      selection = nil
     }
   }
 

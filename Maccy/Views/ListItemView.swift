@@ -73,6 +73,9 @@ struct ListItemView<Title: View>: View {
     .clipShape(.rect(cornerRadius: 4))
     .onHover { hovering in
       if hovering {
+        if appState.currentScope != .history && appState.isPromptMultiSelecting {
+          return
+        }
         if !appState.isKeyboardNavigating {
           appState.selectWithoutScrolling(id)
         } else {

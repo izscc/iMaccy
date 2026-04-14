@@ -574,3 +574,142 @@ class PromptPhase2Tests: XCTestCase {
     return item
   }
 }
+
+@MainActor
+class PromptPhase3Tests: XCTestCase {
+  var promptLibrary: PromptLibrary!
+  var promptCategoryStore: PromptCategoryStore!
+  var promptTagStore: PromptTagStore!
+  var promptOrganizer: PromptOrganizer!
+
+  override func setUp() {
+    super.setUp()
+    clearPromptData()
+    promptLibrary = PromptLibrary()
+    promptCategoryStore = PromptCategoryStore()
+    promptTagStore = PromptTagStore()
+    promptOrganizer = PromptOrganizer(
+      promptLibrary: promptLibrary,
+      promptCategoryStore: promptCategoryStore,
+      promptTagStore: promptTagStore
+    )
+    promptCategoryStore.seedDefaultsIfNeeded()
+    promptTagStore.load()
+    promptLibrary.load()
+  }
+
+  override func tearDown() {
+    clearPromptData()
+    super.tearDown()
+  }
+
+  func testRecentBookmarksReturnLatestThreeAndExcludeRoot() throws {
+    let b1 = try promptCategoryStore.createBookmark("写作")
+    let b2 = try promptCategoryStore.createBookmark("开发")
+    let b3 = try promptCategoryStore.createBookmark("运营")
+    let b4 = try promptCategoryStore.createBookmark("运维")
+
+    b1.lastAssignedAt = Date(timeIntervalSince1970: 1)
+    b2.lastAssignedAt = Date(timeIntervalSince1970: 4)
+    b3.lastAssignedAt = Date(timeIntervalSince1970: 2)
+    b4.lastAssignedAt = Date(timeIntervalSince1970: 3)
+    try Storage.shared.context.save()
+    promptCategoryStore.load()
+
+    XCTAssertEqual(promptCategoryStore.recentBookmarks().map(\.name), ["开发", "运维", "运营"])
+  }
+
+  func testMoveToPromptMarksAssignedBookmarkAsRecent() throws {
+    let bookmark = try promptCategoryStore.createBookmark("开发")
+    let historyItem = historyItem("帮我 review 这个 PR")
+
+    _ = promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id)
+    promptCategoryStore.load()
+
+    XCTAssertNotNil(promptCategoryStore.bookmarkCategories.first(where: { $0.id == bookmark.id })?.lastAssignedAt)
+    XCTAssertEqual(promptCategoryStore.recentBookmarks().first?.id, bookmark.id)
+  }
+
+  func testBulkAssignTagsFavoritesDeleteAndHashTagSearch() throws {
+    let dev = try promptCategoryStore.createBookmark("开发")
+    let ops = try promptCategoryStore.createBookmark("运维")
+    let tagCode = try promptTagStore.createTag("代码")
+    let tagHigh = try promptTagStore.createTag("高优")
+
+    let first = PromptItem(
+      title: "代码审查",
+      plainText: "请 review 这段代码",
+      normalizedText: "请 review 这段代码",
+      categoryID: dev.id
+    )
+    let second = PromptItem(
+      title: "回滚预案",
+      plainText: "给我一份回滚预案",
+      normalizedText: "给我一份回滚预案",
+      categoryID: dev.id
+    )
+    Storage.shared.context.insert(first)
+    Storage.shared.context.insert(second)
+    try Storage.shared.context.save()
+    promptLibrary.load()
+
+    promptOrganizer.addTags([tagCode.id, tagHigh.id], to: [first, second])
+    XCTAssertEqual(Set(promptTagStore.tags(for: first.id).map(\.name)), Set(["代码", "高优"]))
+    XCTAssertEqual(Set(promptTagStore.tags(for: second.id).map(\.name)), Set(["代码", "高优"]))
+
+    promptOrganizer.removeTags([tagHigh.id], from: [second])
+    XCTAssertEqual(Set(promptTagStore.tags(for: second.id).map(\.name)), Set(["代码"]))
+
+    promptOrganizer.assignPrompts([first, second], to: ops.id)
+    XCTAssertEqual(first.categoryID, ops.id)
+    XCTAssertEqual(second.categoryID, ops.id)
+    XCTAssertEqual(promptCategoryStore.recentBookmarks().first?.id, ops.id)
+
+    promptOrganizer.setFavorite(true, for: [first, second])
+    XCTAssertTrue(first.isFavorite)
+    XCTAssertTrue(second.isFavorite)
+
+    let hashSearch = promptLibrary.visibleItems(
+      searchQuery: "#代码 review",
+      favoritesOnly: false,
+      selectedCategoryID: ops.id,
+      selectedTagIDs: [],
+      tagStore: promptTagStore
+    )
+    XCTAssertEqual(hashSearch.map(\.title), ["代码审查"])
+
+    let andSearch = promptLibrary.visibleItems(
+      searchQuery: "#代码 #高优",
+      favoritesOnly: false,
+      selectedCategoryID: ops.id,
+      selectedTagIDs: [],
+      tagStore: promptTagStore
+    )
+    XCTAssertEqual(andSearch.map(\.title), ["代码审查"])
+
+    promptOrganizer.deletePrompts([first, second])
+    XCTAssertEqual(promptLibrary.items.count, 0)
+  }
+
+  private func clearPromptData() {
+    try? Storage.shared.context.delete(model: PromptItemTagLink.self)
+    try? Storage.shared.context.delete(model: PromptTag.self)
+    try? Storage.shared.context.delete(model: PromptItem.self)
+    try? Storage.shared.context.delete(model: PromptCategory.self)
+    try? Storage.shared.context.save()
+  }
+
+  private func historyItem(_ value: String) -> HistoryItem {
+    let contents = [
+      HistoryItemContent(
+        type: NSPasteboard.PasteboardType.string.rawValue,
+        value: value.data(using: .utf8)
+      )
+    ]
+    let item = HistoryItem()
+    Storage.shared.context.insert(item)
+    item.contents = contents
+    item.title = item.generateTitle()
+    return item
+  }
+}

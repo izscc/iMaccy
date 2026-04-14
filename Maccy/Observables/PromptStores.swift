@@ -58,6 +58,11 @@ enum PromptDomainError: LocalizedError, Equatable {
   }
 }
 
+struct PromptParsedSearch {
+  var textQuery: String
+  var tagNames: [String]
+}
+
 @MainActor
 @Observable
 class PromptFilterStateStore {
@@ -116,6 +121,33 @@ class PromptCategoryStore {
   func rootPromptCategory() -> PromptCategory? {
     seedDefaultsIfNeeded()
     return categories.first(where: { $0.isSystem && $0.parentID == nil })
+  }
+
+  func recentBookmarks(limit: Int = 3) -> [PromptCategory] {
+    bookmarkCategories
+      .filter { $0.lastAssignedAt != nil }
+      .sorted {
+        if $0.lastAssignedAt != $1.lastAssignedAt {
+          return ($0.lastAssignedAt ?? .distantPast) > ($1.lastAssignedAt ?? .distantPast)
+        }
+        if $0.sortOrder != $1.sortOrder {
+          return $0.sortOrder < $1.sortOrder
+        }
+        return $0.name.localizedCompare($1.name) == .orderedAscending
+      }
+      .prefix(limit)
+      .map { $0 }
+  }
+
+  func markAssigned(_ categoryID: UUID?) {
+    guard let categoryID,
+          let category = categories.first(where: { $0.id == categoryID && !$0.isSystem }) else {
+      return
+    }
+
+    category.lastAssignedAt = .now
+    try? Storage.shared.context.save()
+    load()
   }
 
   func isRootCategoryID(_ id: UUID?) -> Bool {
@@ -217,6 +249,19 @@ class PromptTagStore {
   func tags(for promptItemID: UUID) -> [PromptTag] {
     let ids = tagIDs(for: promptItemID)
     return tags.filter { ids.contains($0.id) }
+  }
+
+  func resolveTagIDs(forNames names: [String]) -> Set<UUID>? {
+    guard !names.isEmpty else { return [] }
+
+    var resolved = Set<UUID>()
+    for name in names {
+      guard let tag = tags.first(where: { $0.name.promptNormalizedName == name.promptNormalizedName }) else {
+        return nil
+      }
+      resolved.insert(tag.id)
+    }
+    return resolved
   }
 
   func hasAllTags(promptItemID: UUID, selectedTagIDs: Set<UUID>) -> Bool {
@@ -321,7 +366,12 @@ class PromptLibrary {
     selectedTagIDs: Set<UUID>,
     tagStore: PromptTagStore
   ) -> [PromptItem] {
-    let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    let parsedSearch = parseSearch(searchQuery)
+    guard let parsedTagIDs = tagStore.resolveTagIDs(forNames: parsedSearch.tagNames) else {
+      return []
+    }
+    let finalTagIDs = selectedTagIDs.union(parsedTagIDs)
+    let trimmedQuery = parsedSearch.textQuery
 
     return items.filter { item in
       if favoritesOnly && !item.isFavorite {
@@ -332,7 +382,7 @@ class PromptLibrary {
         return false
       }
 
-      if !tagStore.hasAllTags(promptItemID: item.id, selectedTagIDs: selectedTagIDs) {
+      if !tagStore.hasAllTags(promptItemID: item.id, selectedTagIDs: finalTagIDs) {
         return false
       }
 
@@ -365,11 +415,42 @@ class PromptLibrary {
     load()
   }
 
+  func delete(_ itemsToDelete: [PromptItem]) {
+    for item in itemsToDelete {
+      Storage.shared.context.delete(item)
+    }
+    try? Storage.shared.context.save()
+    load()
+  }
+
   func markUsed(_ item: PromptItem) {
     item.usageCount += 1
     item.updatedAt = .now
     try? Storage.shared.context.save()
     load()
+  }
+
+  func setFavorite(_ value: Bool, for itemsToUpdate: [PromptItem]) {
+    for item in itemsToUpdate {
+      item.isFavorite = value
+      item.updatedAt = .now
+    }
+    try? Storage.shared.context.save()
+    load()
+  }
+
+  private func parseSearch(_ query: String) -> PromptParsedSearch {
+    let pattern = /#([^\s#]+)/
+    let matches = query.matches(of: pattern)
+    let tagNames = matches.map { String($0.output.1) }
+    var remaining = query
+    for match in matches.reversed() {
+      remaining.removeSubrange(match.range)
+    }
+    return PromptParsedSearch(
+      textQuery: remaining.promptTrimmedName,
+      tagNames: tagNames
+    )
   }
 
   private func sorted(_ items: [PromptItem]) -> [PromptItem] {
@@ -440,6 +521,7 @@ class PromptOrganizer {
         existingPrompt.categoryID = targetCategoryID
         existingPrompt.sourceHistoryItemID = String(describing: historyItem.persistentModelID)
         try? Storage.shared.context.save()
+        promptCategoryStore.markAssigned(targetCategoryID)
         promptLibrary.load()
         return existingPrompt
       case .createNewCopy:
@@ -462,6 +544,7 @@ class PromptOrganizer {
     )
     Storage.shared.context.insert(promptItem)
     try? Storage.shared.context.save()
+    promptCategoryStore.markAssigned(targetCategoryID)
     promptLibrary.load()
     return promptItem
   }
@@ -474,6 +557,21 @@ class PromptOrganizer {
     promptItem.categoryID = resolvedCategoryID
     promptItem.updatedAt = .now
     try? Storage.shared.context.save()
+    promptCategoryStore.markAssigned(resolvedCategoryID)
+    promptLibrary.load()
+  }
+
+  func assignPrompts(_ promptItems: [PromptItem], to categoryID: UUID?) {
+    guard let resolvedCategoryID = resolvedCategoryID(categoryID) else {
+      return
+    }
+
+    for item in promptItems {
+      item.categoryID = resolvedCategoryID
+      item.updatedAt = .now
+    }
+    try? Storage.shared.context.save()
+    promptCategoryStore.markAssigned(resolvedCategoryID)
     promptLibrary.load()
   }
 
@@ -482,6 +580,34 @@ class PromptOrganizer {
     promptItem.updatedAt = .now
     try? Storage.shared.context.save()
     promptLibrary.load()
+  }
+
+  func addTags(_ tagIDs: Set<UUID>, to promptItems: [PromptItem]) {
+    for item in promptItems {
+      let merged = promptTagStore.tagIDs(for: item.id).union(tagIDs)
+      promptTagStore.setTagIDs(merged, for: item.id)
+      item.updatedAt = .now
+    }
+    try? Storage.shared.context.save()
+    promptLibrary.load()
+  }
+
+  func removeTags(_ tagIDs: Set<UUID>, from promptItems: [PromptItem]) {
+    for item in promptItems {
+      let remained = promptTagStore.tagIDs(for: item.id).subtracting(tagIDs)
+      promptTagStore.setTagIDs(remained, for: item.id)
+      item.updatedAt = .now
+    }
+    try? Storage.shared.context.save()
+    promptLibrary.load()
+  }
+
+  func setFavorite(_ value: Bool, for promptItems: [PromptItem]) {
+    promptLibrary.setFavorite(value, for: promptItems)
+  }
+
+  func deletePrompts(_ promptItems: [PromptItem]) {
+    promptLibrary.delete(promptItems)
   }
 
   func removeTag(_ tag: PromptTag, from promptItem: PromptItem) {

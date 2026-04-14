@@ -10,6 +10,7 @@ struct PromptWorkspaceView: View {
   @State private var editorSheet: PromptEditorSheet?
   @State private var deleteTarget: PromptDeleteTarget?
   @State private var errorMessage: String?
+  @State private var showBulkDeleteConfirmation = false
 
   private var sidebarWidth: CGFloat { 220 }
   private var detailWidth: CGFloat {
@@ -37,29 +38,53 @@ struct PromptWorkspaceView: View {
 
       Divider()
 
-      PromptListView(
-        items: appState.visiblePromptItems,
-        emptyState: emptyState,
-        bookmarks: appState.promptCategoryStore.bookmarkCategories,
-        tagsForItem: { appState.promptTags(for: $0) },
-        badgeNameForItem: { appState.promptCategoryBadgeName(for: $0) },
-        onSelect: { appState.selection = $0.id },
-        onActivate: { appState.selectPrompt($0) },
-        onToggleFavorite: { appState.toggleFavoritePrompt($0) },
-        onMoveToRoot: { appState.assignPromptToCategory($0, categoryID: nil) },
-        onMoveToBookmark: { item, category in appState.assignPromptToCategory(item, categoryID: category.id) },
-        onEditTags: { editorSheet = .editTags($0) },
-        onDelete: { appState.deletePrompt($0) }
-      )
+      VStack(alignment: .leading, spacing: 10) {
+        if appState.isPromptMultiSelecting {
+          PromptBulkActionBar(
+            selectionCount: appState.selectedPromptIDs.count,
+            bookmarks: appState.promptCategoryStore.bookmarkCategories,
+            recentBookmarks: appState.recentPromptBookmarks,
+            onMoveToRecent: { appState.bulkAssignPromptsToCategory($0.id) },
+            onMoveToBookmark: { appState.bulkAssignPromptsToCategory($0.id) },
+            onMoveToRoot: { appState.bulkAssignPromptsToCategory(nil) },
+            onAddTags: { editorSheet = .bulkAddTags },
+            onRemoveTags: { editorSheet = .bulkRemoveTags },
+            onFavorite: { appState.bulkSetFavoriteForSelectedPrompts(true) },
+            onUnfavorite: { appState.bulkSetFavoriteForSelectedPrompts(false) },
+            onDelete: { showBulkDeleteConfirmation = true }
+          )
+        }
+
+        PromptListView(
+          items: appState.visiblePromptItems,
+          emptyState: emptyState,
+          bookmarks: appState.promptCategoryStore.bookmarkCategories,
+          recentBookmarks: appState.recentPromptBookmarks,
+          tagsForItem: { appState.promptTags(for: $0) },
+          badgeNameForItem: { appState.promptCategoryBadgeName(for: $0) },
+          onSelect: { appState.selectPromptListItem($0) },
+          onToggleMultiSelection: { appState.togglePromptMultiSelection($0) },
+          onActivate: { appState.selectPrompt($0) },
+          onToggleFavorite: { appState.toggleFavoritePrompt($0) },
+          onMoveToRecentBookmark: { item, category in appState.assignPromptToCategory(item, categoryID: category.id) },
+          onMoveToRoot: { appState.assignPromptToCategory($0, categoryID: nil) },
+          onMoveToBookmark: { item, category in appState.assignPromptToCategory(item, categoryID: category.id) },
+          onEditTags: { editorSheet = .editTags($0) },
+          onDelete: { appState.deletePrompt($0) }
+        )
+      }
+      .frame(maxWidth: .infinity, alignment: .topLeading)
 
       Divider()
 
       PromptDetailView(
         item: appState.selectedPromptItem,
         bookmarks: appState.promptCategoryStore.bookmarkCategories,
-        currentCategoryName: appState.selectedPromptItem.flatMap { appState.promptCategoryBadgeName(for: $0) } ?? "Prompt 根目录",
+        recentBookmarks: appState.recentPromptBookmarks,
+        currentCategoryName: appState.selectedPromptItem.map { appState.promptCategoryName(for: $0) } ?? "Prompt 根目录",
         promptTags: appState.selectedPromptItem.map { appState.promptTags(for: $0) } ?? [],
         onToggleFavorite: { appState.toggleFavoritePrompt($0) },
+        onQuickAssign: { item, category in appState.assignPromptToCategory(item, categoryID: category.id) },
         onSelectCategory: { item, categoryID in appState.assignPromptToCategory(item, categoryID: categoryID) },
         onRemoveTag: { item, tag in appState.removePromptTag(tag, from: item) },
         onEditTags: { if let item = $0 { editorSheet = .editTags(item) } },
@@ -89,7 +114,7 @@ struct PromptWorkspaceView: View {
         searchFocused = true
         appState.isKeyboardNavigating = true
         if appState.selectedPromptItem == nil {
-          appState.selection = appState.visiblePromptItems.first?.id
+          appState.selectPromptListItem(appState.visiblePromptItems.first)
         }
       } else {
         appState.isKeyboardNavigating = true
@@ -133,6 +158,10 @@ struct PromptWorkspaceView: View {
         }
       case .editTags(let item):
         PromptTagAssignmentSheet(promptItem: item)
+      case .bulkAddTags:
+        PromptBulkTagSheet(mode: .add)
+      case .bulkRemoveTags:
+        PromptBulkTagSheet(mode: .remove)
       }
     }
     .alert(item: $deleteTarget) { target in
@@ -161,6 +190,14 @@ struct PromptWorkspaceView: View {
         )
       }
     }
+    .alert("批量删除 Prompt", isPresented: $showBulkDeleteConfirmation) {
+      Button("取消", role: .cancel) {}
+      Button("删除", role: .destructive) {
+        appState.bulkDeleteSelectedPrompts()
+      }
+    } message: {
+      Text("确定要删除已选中的 \(appState.selectedPromptIDs.count) 个 Prompt 吗？此操作无法撤销。")
+    }
     .alert("操作失败", isPresented: Binding(
       get: { errorMessage != nil },
       set: { if !$0 { errorMessage = nil } }
@@ -182,6 +219,10 @@ struct PromptWorkspaceView: View {
         title: "还没有 Prompt",
         message: "在历史列表中右键任意文本内容，选择“移动到 Prompt…”或指定子书签，就可以把它沉淀到这里。"
       )
+    }
+
+    if !search.isEmpty, search.contains("#") {
+      return .init(title: "当前搜索条件下暂无 Prompt", message: "你可以减少 #标签 条件，或清空搜索后再试。")
     }
 
     if !search.isEmpty {
@@ -327,15 +368,84 @@ private struct PromptSidebarRow: View {
   }
 }
 
+private struct PromptBulkActionBar: View {
+  let selectionCount: Int
+  let bookmarks: [PromptCategory]
+  let recentBookmarks: [PromptCategory]
+  let onMoveToRecent: (PromptCategory) -> Void
+  let onMoveToBookmark: (PromptCategory) -> Void
+  let onMoveToRoot: () -> Void
+  let onAddTags: () -> Void
+  let onRemoveTags: () -> Void
+  let onFavorite: () -> Void
+  let onUnfavorite: () -> Void
+  let onDelete: () -> Void
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Text("已选择 \(selectionCount) 项")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+      if !recentBookmarks.isEmpty {
+        Menu("移到最近子书签") {
+          ForEach(recentBookmarks, id: \.id) { bookmark in
+            Button(bookmark.name) {
+              onMoveToRecent(bookmark)
+            }
+          }
+        }
+      }
+
+      Menu("移动到子书签") {
+        if bookmarks.isEmpty {
+          Button("暂无子书签") {}
+            .disabled(true)
+        } else {
+          ForEach(bookmarks, id: \.id) { bookmark in
+            Button(bookmark.name) {
+              onMoveToBookmark(bookmark)
+            }
+          }
+        }
+      }
+
+      Button("移回根目录") {
+        onMoveToRoot()
+      }
+      Button("添加标签…") {
+        onAddTags()
+      }
+      Button("移除标签…") {
+        onRemoveTags()
+      }
+      Button("收藏") {
+        onFavorite()
+      }
+      Button("取消收藏") {
+        onUnfavorite()
+      }
+      Button("删除", role: .destructive) {
+        onDelete()
+      }
+    }
+    .buttonStyle(.bordered)
+    .font(.caption)
+  }
+}
+
 private struct PromptListView: View {
   let items: [PromptItem]
   let emptyState: PromptEmptyState
   let bookmarks: [PromptCategory]
+  let recentBookmarks: [PromptCategory]
   let tagsForItem: (PromptItem) -> [PromptTag]
   let badgeNameForItem: (PromptItem) -> String?
   let onSelect: (PromptItem) -> Void
+  let onToggleMultiSelection: (PromptItem) -> Void
   let onActivate: (PromptItem) -> Void
   let onToggleFavorite: (PromptItem) -> Void
+  let onMoveToRecentBookmark: (PromptItem, PromptCategory) -> Void
   let onMoveToRoot: (PromptItem) -> Void
   let onMoveToBookmark: (PromptItem, PromptCategory) -> Void
   let onEditTags: (PromptItem) -> Void
@@ -356,9 +466,12 @@ private struct PromptListView: View {
                 tags: tagsForItem(item),
                 categoryBadge: badgeNameForItem(item),
                 bookmarks: bookmarks,
+                recentBookmarks: recentBookmarks,
                 onSelect: { onSelect(item) },
+                onToggleMultiSelection: { onToggleMultiSelection(item) },
                 onActivate: { onActivate(item) },
                 onToggleFavorite: { onToggleFavorite(item) },
+                onMoveToRecentBookmark: { onMoveToRecentBookmark(item, $0) },
                 onMoveToRoot: { onMoveToRoot(item) },
                 onMoveToBookmark: { onMoveToBookmark(item, $0) },
                 onEditTags: { onEditTags(item) },
@@ -390,9 +503,12 @@ private struct PromptRowView: View {
   let tags: [PromptTag]
   let categoryBadge: String?
   let bookmarks: [PromptCategory]
+  let recentBookmarks: [PromptCategory]
   let onSelect: () -> Void
+  let onToggleMultiSelection: () -> Void
   let onActivate: () -> Void
   let onToggleFavorite: () -> Void
+  let onMoveToRecentBookmark: (PromptCategory) -> Void
   let onMoveToRoot: () -> Void
   let onMoveToBookmark: (PromptCategory) -> Void
   let onEditTags: () -> Void
@@ -411,7 +527,7 @@ private struct PromptRowView: View {
       accessoryImage: ColorImage.from(item.title),
       attributedTitle: nil,
       shortcuts: [],
-      isSelected: appState.selectedPromptItem?.id == item.id,
+      isSelected: appState.isPromptItemSelected(item),
       help: nil
     ) {
       HStack(spacing: 6) {
@@ -436,11 +552,26 @@ private struct PromptRowView: View {
       onActivate()
     }
     .onTapGesture {
-      onSelect()
+      let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      if modifiers.contains(.command) {
+        onToggleMultiSelection()
+      } else {
+        onSelect()
+      }
     }
     .contextMenu {
       Button(item.isFavorite ? "取消收藏" : "收藏") {
         onToggleFavorite()
+      }
+
+      if !recentBookmarks.isEmpty {
+        Menu("移动到最近子书签") {
+          ForEach(recentBookmarks, id: \.id) { bookmark in
+            Button(bookmark.name) {
+              onMoveToRecentBookmark(bookmark)
+            }
+          }
+        }
       }
 
       Menu("移动到子书签") {
@@ -474,9 +605,11 @@ private struct PromptRowView: View {
 private struct PromptDetailView: View {
   let item: PromptItem?
   let bookmarks: [PromptCategory]
+  let recentBookmarks: [PromptCategory]
   let currentCategoryName: String
   let promptTags: [PromptTag]
   let onToggleFavorite: (PromptItem?) -> Void
+  let onQuickAssign: (PromptItem?, PromptCategory) -> Void
   let onSelectCategory: (PromptItem?, UUID?) -> Void
   let onRemoveTag: (PromptItem, PromptTag) -> Void
   let onEditTags: (PromptItem?) -> Void
@@ -503,6 +636,23 @@ private struct PromptDetailView: View {
           set: { _ in onToggleFavorite(item) }
         ))
         .toggleStyle(.switch)
+
+        if !recentBookmarks.isEmpty {
+          VStack(alignment: .leading, spacing: 6) {
+            Text("快捷归类")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+              ForEach(recentBookmarks, id: \.id) { bookmark in
+                Button(bookmark.name) {
+                  onQuickAssign(item, bookmark)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+              }
+            }
+          }
+        }
 
         VStack(alignment: .leading, spacing: 6) {
           Text("子书签")
@@ -647,6 +797,118 @@ private struct PromptNameEditorSheet: View {
     }
     .padding(20)
     .frame(width: 340)
+  }
+}
+
+private enum PromptBulkTagMode {
+  case add
+  case remove
+
+  var title: String {
+    switch self {
+    case .add:
+      return "批量添加标签"
+    case .remove:
+      return "批量移除标签"
+    }
+  }
+}
+
+private struct PromptBulkTagSheet: View {
+  let mode: PromptBulkTagMode
+
+  @Environment(AppState.self) private var appState
+  @Environment(\.dismiss) private var dismiss
+
+  @State private var selectedTagIDs: Set<UUID> = []
+  @State private var newTagName: String = ""
+  @State private var errorMessage: String?
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text(mode.title)
+        .font(.headline)
+
+      Text("已选中 \(appState.selectedPromptIDs.count) 个 Prompt")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+      if mode == .add {
+        TextField("输入新标签名称（可选）", text: $newTagName)
+          .textFieldStyle(.roundedBorder)
+      }
+
+      if appState.promptTagStore.tags.isEmpty {
+        Text(mode == .add ? "还没有标签，输入上方名称即可直接创建。" : "当前没有可移除的标签。")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } else {
+        ScrollView {
+          LazyVStack(alignment: .leading, spacing: 8) {
+            ForEach(availableTags, id: \.id) { tag in
+              Toggle(isOn: Binding(
+                get: { selectedTagIDs.contains(tag.id) },
+                set: { isOn in
+                  if isOn {
+                    selectedTagIDs.insert(tag.id)
+                  } else {
+                    selectedTagIDs.remove(tag.id)
+                  }
+                }
+              )) {
+                Text(tag.name)
+              }
+              .toggleStyle(.checkbox)
+            }
+          }
+        }
+        .frame(maxHeight: 180)
+      }
+
+      if let errorMessage {
+        Text(errorMessage)
+          .font(.caption)
+          .foregroundStyle(.red)
+      }
+
+      HStack {
+        Spacer(minLength: 0)
+        Button("取消") {
+          dismiss()
+        }
+        Button("保存") {
+          do {
+            switch mode {
+            case .add:
+              var finalTagIDs = selectedTagIDs
+              if !newTagName.promptTrimmedName.isEmpty {
+                let tag = try appState.findOrCreatePromptTag(name: newTagName)
+                finalTagIDs.insert(tag.id)
+              }
+              appState.bulkAddPromptTagIDs(finalTagIDs)
+            case .remove:
+              appState.bulkRemovePromptTagIDs(selectedTagIDs)
+            }
+            dismiss()
+          } catch {
+            errorMessage = error.localizedDescription
+          }
+        }
+        .keyboardShortcut(.defaultAction)
+      }
+    }
+    .padding(20)
+    .frame(width: 360)
+  }
+
+  private var availableTags: [PromptTag] {
+    switch mode {
+    case .add:
+      return appState.promptTagStore.tags
+    case .remove:
+      let ids = Set(appState.selectedPromptItems.flatMap { appState.promptTags(for: $0).map(\.id) })
+      return appState.promptTagStore.tags.filter { ids.contains($0.id) }
+    }
   }
 }
 
@@ -802,6 +1064,8 @@ private enum PromptEditorSheet: Identifiable {
   case createTag
   case renameTag(PromptTag)
   case editTags(PromptItem)
+  case bulkAddTags
+  case bulkRemoveTags
 
   var id: String {
     switch self {
@@ -815,6 +1079,10 @@ private enum PromptEditorSheet: Identifiable {
       return "renameTag-\(tag.id.uuidString)"
     case .editTags(let item):
       return "editTags-\(item.id.uuidString)"
+    case .bulkAddTags:
+      return "bulkAddTags"
+    case .bulkRemoveTags:
+      return "bulkRemoveTags"
     }
   }
 }
