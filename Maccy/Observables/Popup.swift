@@ -26,6 +26,7 @@ class Popup {
 
   func open(height: CGFloat, at popupPosition: PopupPosition = Defaults[.popupPosition]) {
     AppState.shared.currentScope = Defaults[.defaultLibraryScope]
+    self.height = AppState.shared.targetWindowSize(forTotalHeight: height).height
     AppState.shared.appDelegate?.panel.open(height: height, at: popupPosition)
   }
 
@@ -34,8 +35,13 @@ class Popup {
   }
 
   func resize(height: CGFloat) {
-    self.height = height + headerHeight + pinnedItemsHeight + footerHeight + (verticalPadding * 2)
-    AppState.shared.appDelegate?.panel.verticallyResize(to: self.height)
+    let chromeHeight = headerHeight + pinnedItemsHeight + footerHeight + (verticalPadding * 2)
+    let targetSize = AppState.shared.targetWindowSize(forTotalHeight: height + chromeHeight)
+    self.height = targetSize.height
+    AppState.shared.appDelegate?.panel.resize(to: targetSize)
+    if AppState.shared.currentScope == .history {
+      AppState.shared.recordHistoryPresentedWindowSize(targetSize)
+    }
     needsResize = false
   }
 }

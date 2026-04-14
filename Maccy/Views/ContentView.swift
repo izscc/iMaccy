@@ -77,7 +77,15 @@ struct ContentView: View {
       if let window = $0.object as? NSWindow,
          let bundleIdentifier = Bundle.main.bundleIdentifier,
          window.identifier == NSUserInterfaceItemIdentifier(bundleIdentifier) {
-        scenePhase = .background
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+          if let panel = appState.appDelegate?.panel,
+             panel.isPresented,
+             panel.shouldRemainPresentedAfterResign {
+            scenePhase = .active
+          } else {
+            scenePhase = .background
+          }
+        }
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: NSPopover.willShowNotification)) {

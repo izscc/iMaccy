@@ -11,29 +11,30 @@ struct HeaderView: View {
   @Default(.showTitle) private var showTitle
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      HStack(spacing: 8) {
-        if showTitle {
-          Text("iMaccy")
-            .foregroundStyle(.secondary)
-        }
-
-        Picker("范围", selection: Binding(
-          get: { appState.currentScope },
-          set: { appState.currentScope = $0 }
-        )) {
-          ForEach(LibraryScope.allCases) { scope in
-            Text(scope.title).tag(scope)
-          }
-        }
-        .labelsHidden()
-        .pickerStyle(.segmented)
+    HStack(alignment: .center, spacing: 8) {
+      if showTitle {
+        Text("iMaccy")
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+          .fixedSize()
       }
+
+      Picker("范围", selection: Binding(
+        get: { appState.currentScope },
+        set: { appState.currentScope = $0 }
+      )) {
+        ForEach(LibraryScope.allCases) { scope in
+          Text(scope.title).tag(scope)
+        }
+      }
+      .labelsHidden()
+      .pickerStyle(.segmented)
+      .fixedSize(horizontal: true, vertical: false)
 
       SearchFieldView(placeholder: "search_placeholder", query: $searchQuery)
         .focused($searchFocused)
-        .frame(maxWidth: .infinity)
-        .frame(height: appState.searchVisible ? nil : 0)
+        .frame(minWidth: 170, maxWidth: .infinity)
+        .frame(width: appState.searchVisible ? nil : 0)
         .opacity(appState.searchVisible ? 1 : 0)
         .onChange(of: scenePhase) {
           if scenePhase == .background && !searchQuery.isEmpty {
@@ -42,10 +43,8 @@ struct HeaderView: View {
         }
     }
     .padding(.horizontal, 10)
-    .padding(.top, appState.searchVisible ? 2 : 0)
-    // 2px is needed to prevent items from showing behind top pinned items during scrolling
-    // https://github.com/p0deje/Maccy/issues/832
-    .padding(.bottom, appState.searchVisible ? 6 : 2)
+    .padding(.top, 2)
+    .padding(.bottom, 6)
     .background {
       GeometryReader { geo in
         Color.clear

@@ -5,6 +5,20 @@ import Observation
 import Settings
 import SwiftData
 
+struct PopupWindowSizePolicy {
+  let historySize: NSSize
+  let promptExpandedMinWidth: CGFloat
+
+  func size(for scope: LibraryScope, totalContentHeight: CGFloat) -> NSSize {
+    switch scope {
+    case .history:
+      return NSSize(width: historySize.width, height: min(totalContentHeight, historySize.height))
+    case .prompt, .favorites:
+      return NSSize(width: max(historySize.width, promptExpandedMinWidth), height: historySize.height)
+    }
+  }
+}
+
 @MainActor
 @Observable
 class AppState: Sendable {
@@ -20,15 +34,18 @@ class AppState: Sendable {
   let promptTagStore: PromptTagStore
   let promptFilter: PromptFilterStateStore
   let promptOrganizer: PromptOrganizer
+  let promptExpandedMinWidth: CGFloat = 980
 
   var currentScope: LibraryScope = Defaults[.defaultLibraryScope] {
     didSet {
       guard oldValue != currentScope else { return }
+      if oldValue == .history, let panelSize = appDelegate?.panel.frame.size {
+        recordHistoryPresentedWindowSize(panelSize)
+      }
       synchronizePromptFilterScope()
       if currentScope != .history {
         popup.pinnedItemsHeight = 0
         popup.footerHeight = 0
-        ensurePromptWindowWidth()
         syncPromptSelectionAfterVisibilityChange()
       } else {
         selectDefaultItemForCurrentScope()
@@ -126,6 +143,8 @@ class AppState: Sendable {
   private var settingsWindowController: SettingsWindowController?
   @ObservationIgnored
   private var preservePromptSelectionDuringSelectionChange = false
+  @ObservationIgnored
+  private var historyPresentedWindowSize: NSSize?
 
   init() {
     history = History.shared
@@ -620,6 +639,23 @@ class AppState: Sendable {
     NSApp.terminate(self)
   }
 
+  func recordHistoryPresentedWindowSize(_ size: NSSize) {
+    historyPresentedWindowSize = size
+  }
+
+  var historyReferenceWindowSize: NSSize {
+    let size = historyPresentedWindowSize ?? Defaults[.windowSize]
+    return NSSize(width: max(size.width, 320), height: max(size.height, 240))
+  }
+
+  func targetWindowSize(forTotalHeight totalHeight: CGFloat) -> NSSize {
+    PopupWindowSizePolicy(
+      historySize: historyReferenceWindowSize,
+      promptExpandedMinWidth: promptExpandedMinWidth
+    )
+    .size(for: currentScope, totalContentHeight: totalHeight)
+  }
+
   private func synchronizePromptFilterScope() {
     switch currentScope {
     case .history:
@@ -671,19 +707,5 @@ class AppState: Sendable {
       selectedPromptItem = nil
       selection = nil
     }
-  }
-
-  private func ensurePromptWindowWidth(minWidth: CGFloat = 980) {
-    guard currentScope != .history,
-          let panel = appDelegate?.panel,
-          panel.frame.width < minWidth else {
-      return
-    }
-
-    var frame = panel.frame
-    frame.origin.x -= (minWidth - frame.width) / 2
-    frame.size.width = minWidth
-    panel.setFrame(frame, display: true, animate: true)
-    panel.saveWindowFrame(frame: frame)
   }
 }

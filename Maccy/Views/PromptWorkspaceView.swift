@@ -13,9 +13,7 @@ struct PromptWorkspaceView: View {
   @State private var showBulkDeleteConfirmation = false
 
   private var sidebarWidth: CGFloat { 220 }
-  private var detailWidth: CGFloat {
-    max(260, min(340, (Defaults[.windowSize].width * 0.30)))
-  }
+  private var detailWidth: CGFloat { 300 }
 
   var body: some View {
     HStack(alignment: .top, spacing: 10) {

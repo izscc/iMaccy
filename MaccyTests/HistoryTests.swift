@@ -713,3 +713,44 @@ class PromptPhase3Tests: XCTestCase {
     return item
   }
 }
+
+final class PopupWindowSizePolicyTests: XCTestCase {
+  func testHistoryUsesRememberedWidthAndClampedHeight() {
+    let policy = PopupWindowSizePolicy(
+      historySize: NSSize(width: 480, height: 720),
+      promptExpandedMinWidth: 980
+    )
+
+    let result = policy.size(for: .history, totalContentHeight: 640)
+
+    XCTAssertEqual(result.width, 480)
+    XCTAssertEqual(result.height, 640)
+  }
+
+  func testPromptUsesHistoryHeightAndExpandedWidth() {
+    let policy = PopupWindowSizePolicy(
+      historySize: NSSize(width: 520, height: 760),
+      promptExpandedMinWidth: 980
+    )
+
+    let prompt = policy.size(for: .prompt, totalContentHeight: 300)
+    let favorites = policy.size(for: .favorites, totalContentHeight: 300)
+
+    XCTAssertEqual(prompt.width, 980)
+    XCTAssertEqual(prompt.height, 760)
+    XCTAssertEqual(favorites.width, 980)
+    XCTAssertEqual(favorites.height, 760)
+  }
+
+  func testPromptKeepsHistoryWidthWhenHistoryAlreadyWiderThanExpandedMinimum() {
+    let policy = PopupWindowSizePolicy(
+      historySize: NSSize(width: 1180, height: 760),
+      promptExpandedMinWidth: 980
+    )
+
+    let result = policy.size(for: .prompt, totalContentHeight: 320)
+
+    XCTAssertEqual(result.width, 1180)
+    XCTAssertEqual(result.height, 760)
+  }
+}
