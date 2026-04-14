@@ -1,6 +1,9 @@
+xcuserdata/
+iMaccy.xcodeproj/project.xcworkspace/xcshareddata
+.idea/
+.vscode/
 .DS_Store
+Maccy/.DS_Store
 *.swp
 *.swo
-.vscode/
-.idea/
 docs/ui/_qlpreview/
