@@ -116,3 +116,191 @@ struct HistoryListView: View {
     }
   }
 }
+
+struct PromptWorkspaceView: View {
+  @FocusState.Binding var searchFocused: Bool
+
+  @Environment(AppState.self) private var appState
+  @Environment(\.scenePhase) private var scenePhase
+
+  private var detailWidth: CGFloat {
+    max(220, min(280, (Defaults[.windowSize].width * 0.36)))
+  }
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 10) {
+      promptList
+
+      Divider()
+
+      PromptDetailView(item: appState.selectedPromptItem)
+        .frame(width: detailWidth, alignment: .topLeading)
+    }
+    .padding(.horizontal, 10)
+    .background {
+      GeometryReader { geo in
+        Color.clear
+          .task {
+            appState.popup.pinnedItemsHeight = 0
+          }
+          .task(id: appState.popup.needsResize) {
+            try? await Task.sleep(for: .milliseconds(10))
+            guard !Task.isCancelled else { return }
+
+            if appState.popup.needsResize {
+              appState.popup.resize(height: geo.size.height)
+            }
+          }
+      }
+    }
+    .onChange(of: scenePhase) {
+      if scenePhase == .active {
+        searchFocused = true
+        appState.isKeyboardNavigating = true
+        if appState.selectedPromptItem == nil {
+          appState.selection = appState.visiblePromptItems.first?.id
+        }
+      } else {
+        appState.isKeyboardNavigating = true
+      }
+    }
+  }
+
+  private var promptList: some View {
+    ScrollViewReader { proxy in
+      ScrollView {
+        LazyVStack(spacing: 0) {
+          if appState.visiblePromptItems.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+              Text("还没有 Prompt")
+                .font(.headline)
+              Text("在历史列表中右键任意文本内容，选择“移动到 Prompt…”，就可以把它沉淀到这里。")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 18)
+            .padding(.horizontal, 10)
+          } else {
+            ForEach(appState.visiblePromptItems, id: \.id) { item in
+              PromptRowView(item: item)
+            }
+          }
+        }
+        .task(id: appState.scrollTarget) {
+          guard appState.scrollTarget != nil else { return }
+
+          try? await Task.sleep(for: .milliseconds(10))
+          guard !Task.isCancelled else { return }
+
+          if let selection = appState.scrollTarget {
+            proxy.scrollTo(selection)
+            appState.scrollTarget = nil
+          }
+        }
+      }
+      .contentMargins(.leading, 10, for: .scrollIndicators)
+    }
+  }
+}
+
+struct PromptRowView: View {
+  let item: PromptItem
+
+  @Environment(AppState.self) private var appState
+
+  private var rowTitle: String {
+    item.isFavorite ? "★ \(item.title)" : item.title
+  }
+
+  var body: some View {
+    ListItemView(
+      id: item.id,
+      appIcon: nil,
+      image: nil,
+      accessoryImage: ColorImage.from(item.title),
+      attributedTitle: nil,
+      shortcuts: [],
+      isSelected: appState.selectedPromptItem?.id == item.id,
+      help: nil
+    ) {
+      Text(verbatim: rowTitle)
+    }
+    .onTapGesture(count: 2) {
+      appState.selectPrompt(item)
+    }
+    .onTapGesture {
+      appState.selection = item.id
+    }
+    .contextMenu {
+      Button(item.isFavorite ? "取消收藏" : "收藏") {
+        appState.toggleFavoritePrompt(item)
+      }
+
+      Button("从 Prompt 删除", role: .destructive) {
+        appState.deletePrompt(item)
+      }
+    }
+  }
+}
+
+struct PromptDetailView: View {
+  let item: PromptItem?
+
+  @Environment(AppState.self) private var appState
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      if let item {
+        Text(item.title)
+          .font(.headline)
+          .textSelection(.enabled)
+
+        ScrollView {
+          Text(item.plainText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .textSelection(.enabled)
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+
+        Divider()
+
+        detailRow(title: "收藏", value: item.isFavorite ? "是" : "否")
+        detailRow(title: "来源历史", value: item.sourceHistoryItemID == nil ? "无" : "有")
+        detailRow(title: "分类", value: appState.promptCategoryStore.categoryName(for: item.categoryID))
+        detailRow(title: "使用次数", value: String(item.usageCount))
+
+        HStack(spacing: 8) {
+          Button(item.isFavorite ? "取消收藏" : "收藏") {
+            appState.toggleFavoritePrompt(item)
+          }
+
+          Button("复制 Prompt") {
+            appState.selectPrompt(item)
+          }
+        }
+        .buttonStyle(.bordered)
+      } else {
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Prompt 详情")
+            .font(.headline)
+          Text("选择一个 Prompt 后，可以在这里查看全文、收藏状态和来源历史。")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+  }
+
+  private func detailRow(title: String, value: String) -> some View {
+    HStack(alignment: .top, spacing: 8) {
+      Text(title)
+        .foregroundStyle(.secondary)
+      Spacer(minLength: 0)
+      Text(value)
+        .multilineTextAlignment(.trailing)
+    }
+    .font(.subheadline)
+  }
+}

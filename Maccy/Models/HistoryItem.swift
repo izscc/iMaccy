@@ -121,6 +121,26 @@ class HistoryItem {
     }
   }
 
+  var promptPlainText: String? {
+    if !fileURLs.isEmpty || image != nil {
+      return nil
+    }
+
+    if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return text
+    }
+
+    if let rtf, !rtf.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return rtf.string
+    }
+
+    if let html, !html.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return html.string
+    }
+
+    return nil
+  }
+
   var fileURLs: [URL] {
     guard !universalClipboardText else {
       return []

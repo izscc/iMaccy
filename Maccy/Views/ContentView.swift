@@ -8,26 +8,46 @@ struct ContentView: View {
 
   @FocusState private var searchFocused: Bool
 
+  private var activeSearchBinding: Binding<String> {
+    Binding(
+      get: { appState.activeSearchQuery },
+      set: { appState.activeSearchQuery = $0 }
+    )
+  }
+
   var body: some View {
     ZStack {
       VisualEffectView()
 
       VStack(alignment: .leading, spacing: 0) {
-        KeyHandlingView(searchQuery: $appState.history.searchQuery, searchFocused: $searchFocused) {
+        KeyHandlingView(searchQuery: activeSearchBinding, searchFocused: $searchFocused) {
           HeaderView(
             searchFocused: $searchFocused,
-            searchQuery: $appState.history.searchQuery
+            searchQuery: activeSearchBinding
           )
 
-          HistoryListView(
-            searchQuery: $appState.history.searchQuery,
-            searchFocused: $searchFocused
-          )
+          if appState.currentScope == .history {
+            HistoryListView(
+              searchQuery: activeSearchBinding,
+              searchFocused: $searchFocused
+            )
+          } else {
+            PromptWorkspaceView(searchFocused: $searchFocused)
+          }
 
-          FooterView(footer: appState.footer)
+          if appState.currentScope == .history {
+            FooterView(footer: appState.footer)
+          } else {
+            Color.clear
+              .frame(height: 0)
+              .task {
+                appState.popup.footerHeight = 0
+              }
+          }
         }
       }
       .animation(.default.speed(3), value: appState.history.items)
+      .animation(.default.speed(3), value: appState.visiblePromptItems.map(\.id))
       .animation(.easeInOut(duration: 0.2), value: appState.searchVisible)
       .padding(.horizontal, 5)
       .padding(.vertical, appState.popup.verticalPadding)
@@ -39,6 +59,7 @@ struct ContentView: View {
       }
       .task {
         try? await appState.history.load()
+        appState.bootstrapPromptLibrary()
       }
     }
     .environment(appState)
@@ -73,6 +94,6 @@ struct ContentView: View {
 
 #Preview {
   ContentView()
-    .environment(\.locale, .init(identifier: "en"))
+    .environment(\.locale, .init(identifier: "zh-Hans"))
     .modelContainer(Storage.shared.container)
 }

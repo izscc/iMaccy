@@ -21,6 +21,13 @@ struct HistoryItemView: View {
     .onTapGesture {
       appState.history.select(item)
     }
+    .contextMenu {
+      if item.item.promptPlainText != nil {
+        Button("移动到 Prompt…") {
+          appState.archiveHistoryItemToPrompt(item.item)
+        }
+      }
+    }
     .popover(isPresented: $item.showPreview, arrowEdge: .trailing) {
       PreviewItemView(item: item)
     }

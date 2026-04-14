@@ -249,3 +249,141 @@ class HistoryTests: XCTestCase {
     return item
   }
 }
+
+@MainActor
+class PromptPhase1Tests: XCTestCase {
+  var promptLibrary: PromptLibrary!
+  var promptCategoryStore: PromptCategoryStore!
+  var promptOrganizer: PromptOrganizer!
+
+  override func setUp() {
+    super.setUp()
+    clearPromptData()
+    promptLibrary = PromptLibrary()
+    promptCategoryStore = PromptCategoryStore()
+    promptOrganizer = PromptOrganizer(promptLibrary: promptLibrary, promptCategoryStore: promptCategoryStore)
+    promptCategoryStore.seedDefaultsIfNeeded()
+    promptLibrary.load()
+  }
+
+  override func tearDown() {
+    clearPromptData()
+    super.tearDown()
+  }
+
+  func testSeedDefaultsCreatesSinglePromptRoot() {
+    promptCategoryStore.seedDefaultsIfNeeded()
+    promptCategoryStore.seedDefaultsIfNeeded()
+
+    XCTAssertEqual(promptCategoryStore.categories.count, 1)
+    XCTAssertEqual(promptCategoryStore.categories.first?.name, "Prompt")
+    XCTAssertTrue(promptCategoryStore.categories.first?.isSystem == true)
+  }
+
+  func testMoveToPromptCreatesPromptItem() {
+    let item = historyItem("整理这段需求，输出一份结构化总结")
+
+    let promptItem = promptOrganizer.moveToPrompt(item)
+
+    XCTAssertNotNil(promptItem)
+    XCTAssertEqual(promptLibrary.items.count, 1)
+    XCTAssertEqual(promptLibrary.items.first?.plainText, "整理这段需求，输出一份结构化总结")
+  }
+
+  func testMoveToPromptRejectsFileHistoryItem() {
+    let url = URL(fileURLWithPath: "/tmp/imaccy.txt")
+    let item = HistoryItem()
+    Storage.shared.context.insert(item)
+    item.contents = [
+      HistoryItemContent(type: NSPasteboard.PasteboardType.fileURL.rawValue, value: url.dataRepresentation),
+      HistoryItemContent(type: NSPasteboard.PasteboardType.string.rawValue, value: url.lastPathComponent.data(using: .utf8))
+    ]
+    item.title = item.generateTitle()
+
+    let promptItem = promptOrganizer.moveToPrompt(item)
+
+    XCTAssertNil(promptItem)
+    XCTAssertEqual(promptLibrary.items.count, 0)
+  }
+
+  func testMoveToPromptDuplicateCanUpdateExisting() {
+    promptOrganizer.duplicateDecisionHandler = { _ in .updateExisting }
+    let first = historyItem("为这段代码写一个简洁的 review")
+    let second = historyItem("  为这段代码写一个简洁的   review  ")
+
+    let firstPrompt = promptOrganizer.moveToPrompt(first)
+    let updatedPrompt = promptOrganizer.moveToPrompt(second)
+
+    XCTAssertEqual(promptLibrary.items.count, 1)
+    XCTAssertEqual(firstPrompt?.id, updatedPrompt?.id)
+    XCTAssertEqual(promptLibrary.items.first?.usageCount, 2)
+  }
+
+  func testMoveToPromptDuplicateCanCreateNewCopy() {
+    promptOrganizer.duplicateDecisionHandler = { _ in .createNewCopy }
+    let first = historyItem("给我一份发布公告")
+    let second = historyItem("给我一份发布公告")
+
+    _ = promptOrganizer.moveToPrompt(first)
+    _ = promptOrganizer.moveToPrompt(second)
+
+    XCTAssertEqual(promptLibrary.items.count, 2)
+  }
+
+  func testMoveToPromptDuplicateCanCancel() {
+    promptOrganizer.duplicateDecisionHandler = { _ in .cancel }
+    let first = historyItem("把这份日报改写成周报摘要")
+    let second = historyItem("把这份日报改写成周报摘要")
+
+    _ = promptOrganizer.moveToPrompt(first)
+    let cancelledPrompt = promptOrganizer.moveToPrompt(second)
+
+    XCTAssertNil(cancelledPrompt)
+    XCTAssertEqual(promptLibrary.items.count, 1)
+  }
+
+  func testPromptLibraryFavoritesAndSearch() {
+    let first = PromptItem(
+      title: "代码审查",
+      plainText: "请帮我 review 这段代码",
+      normalizedText: "请帮我 review 这段代码",
+      isFavorite: true,
+      usageCount: 3
+    )
+    let second = PromptItem(
+      title: "写邮件",
+      plainText: "请帮我写一封上线通知邮件",
+      normalizedText: "请帮我写一封上线通知邮件",
+      isFavorite: false,
+      usageCount: 1
+    )
+    Storage.shared.context.insert(first)
+    Storage.shared.context.insert(second)
+    promptLibrary.load()
+
+    XCTAssertEqual(promptLibrary.visibleItems(searchQuery: "", favoritesOnly: true, selectedCategoryID: nil).count, 1)
+    XCTAssertEqual(promptLibrary.visibleItems(searchQuery: "邮件", favoritesOnly: false, selectedCategoryID: nil).first?.title, "写邮件")
+  }
+
+  private func clearPromptData() {
+    try? Storage.shared.context.delete(model: PromptItemTagLink.self)
+    try? Storage.shared.context.delete(model: PromptTag.self)
+    try? Storage.shared.context.delete(model: PromptItem.self)
+    try? Storage.shared.context.delete(model: PromptCategory.self)
+    try? Storage.shared.context.save()
+  }
+
+  private func historyItem(_ value: String) -> HistoryItem {
+    let contents = [
+      HistoryItemContent(
+        type: NSPasteboard.PasteboardType.string.rawValue,
+        value: value.data(using: .utf8)
+      )
+    ]
+    let item = HistoryItem()
+    Storage.shared.context.insert(item)
+    item.contents = contents
+    item.title = item.generateTitle()
+    return item
+  }
+}

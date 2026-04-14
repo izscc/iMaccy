@@ -121,6 +121,23 @@ class HistoryItemTests: XCTestCase {
     XCTAssertEqual(item.title, "")
   }
 
+  func testPromptPlainTextForString() {
+    let item = historyItem("请帮我优化这段 Prompt")
+    XCTAssertEqual(item.promptPlainText, "请帮我优化这段 Prompt")
+  }
+
+  func testPromptPlainTextRejectsFileItem() {
+    let url = URL(fileURLWithPath: "/tmp/foo.bar")
+    let item = historyItem(url)
+    XCTAssertNil(item.promptPlainText)
+  }
+
+  func testPromptPlainTextRejectsImageItem() {
+    let image = NSImage(named: "NSBluetoothTemplate")!
+    let item = historyItem(image)
+    XCTAssertNil(item.promptPlainText)
+  }
+
   func testSeveralItemsCanHaveEmptyPin() {
     let item1 = historyItem("foo")
     item1.pin = ""

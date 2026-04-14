@@ -11,27 +11,41 @@ struct HeaderView: View {
   @Default(.showTitle) private var showTitle
 
   var body: some View {
-    HStack {
-      if showTitle {
-        Text("Maccy")
-          .foregroundStyle(.secondary)
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 8) {
+        if showTitle {
+          Text("iMaccy")
+            .foregroundStyle(.secondary)
+        }
+
+        Picker("范围", selection: Binding(
+          get: { appState.currentScope },
+          set: { appState.currentScope = $0 }
+        )) {
+          ForEach(LibraryScope.allCases) { scope in
+            Text(scope.title).tag(scope)
+          }
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
       }
 
       SearchFieldView(placeholder: "search_placeholder", query: $searchQuery)
         .focused($searchFocused)
         .frame(maxWidth: .infinity)
+        .frame(height: appState.searchVisible ? nil : 0)
+        .opacity(appState.searchVisible ? 1 : 0)
         .onChange(of: scenePhase) {
           if scenePhase == .background && !searchQuery.isEmpty {
             searchQuery = ""
           }
         }
     }
-    .frame(height: appState.searchVisible ? 25 : 0)
-    .opacity(appState.searchVisible ? 1 : 0)
     .padding(.horizontal, 10)
+    .padding(.top, appState.searchVisible ? 2 : 0)
     // 2px is needed to prevent items from showing behind top pinned items during scrolling
     // https://github.com/p0deje/Maccy/issues/832
-    .padding(.bottom, appState.searchVisible ? 5 : 2)
+    .padding(.bottom, appState.searchVisible ? 6 : 2)
     .background {
       GeometryReader { geo in
         Color.clear

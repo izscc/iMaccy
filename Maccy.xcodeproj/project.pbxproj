@@ -862,7 +862,7 @@
 			};
 			buildConfigurationList = DAEE383E1E3DBEB100DD2966 /* Build configuration list for PBXProject "Maccy" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = en;
+			developmentRegion = zh-Hans;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,

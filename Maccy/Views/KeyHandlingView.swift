@@ -17,6 +17,10 @@ struct KeyHandlingView<Content: View>: View {
         // preferences. Stick to NSEvent to fix this behavior.
         switch KeyChord(NSApp.currentEvent) {
         case .clearHistory:
+          guard appState.currentScope == .history else {
+            return .ignored
+          }
+
           if let item = appState.footer.items.first(where: { $0.title == "clear" }),
              item.confirmation != nil,
              let suppressConfirmation = item.suppressConfirmation {
@@ -30,6 +34,10 @@ struct KeyHandlingView<Content: View>: View {
             return .ignored
           }
         case .clearHistoryAll:
+          guard appState.currentScope == .history else {
+            return .ignored
+          }
+
           if let item = appState.footer.items.first(where: { $0.title == "clear_all" }),
              item.confirmation != nil,
              let suppressConfirmation = item.suppressConfirmation {
@@ -46,9 +54,14 @@ struct KeyHandlingView<Content: View>: View {
           searchQuery = ""
           return .handled
         case .deleteCurrentItem:
-          if let item = appState.history.selectedItem {
-            appState.highlightNext()
-            appState.history.delete(item)
+          switch appState.currentScope {
+          case .history:
+            if let item = appState.history.selectedItem {
+              appState.highlightNext()
+              appState.history.delete(item)
+            }
+          case .prompt, .favorites:
+            appState.deleteSelectedPrompt()
           }
           return .handled
         case .deleteOneCharFromSearch:
@@ -97,6 +110,9 @@ struct KeyHandlingView<Content: View>: View {
           appState.openPreferences()
           return .handled
         case .pinOrUnpin:
+          guard appState.currentScope == .history else {
+            return .ignored
+          }
           appState.history.togglePin(appState.history.selectedItem)
           return .handled
         case .selectCurrentItem:
@@ -109,7 +125,8 @@ struct KeyHandlingView<Content: View>: View {
           ()
         }
 
-        if let item = appState.history.pressedShortcutItem {
+        if appState.currentScope == .history,
+           let item = appState.history.pressedShortcutItem {
           appState.selection = item.id
           Task {
             try? await Task.sleep(for: .milliseconds(50))
