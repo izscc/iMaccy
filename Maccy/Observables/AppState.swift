@@ -64,7 +64,9 @@ class AppState: Sendable {
     promptLibrary.visibleItems(
       searchQuery: promptFilter.searchQuery,
       favoritesOnly: promptFilter.favoritesOnly,
-      selectedCategoryID: promptFilter.selectedCategoryID
+      selectedCategoryID: promptFilter.selectedCategoryID,
+      selectedTagIDs: promptFilter.selectedTagIDs,
+      tagStore: promptTagStore
     )
   }
 
@@ -119,7 +121,11 @@ class AppState: Sendable {
     promptCategoryStore = PromptCategoryStore()
     promptTagStore = PromptTagStore()
     promptFilter = PromptFilterStateStore()
-    promptOrganizer = PromptOrganizer(promptLibrary: promptLibrary, promptCategoryStore: promptCategoryStore)
+    promptOrganizer = PromptOrganizer(
+      promptLibrary: promptLibrary,
+      promptCategoryStore: promptCategoryStore,
+      promptTagStore: promptTagStore
+    )
     synchronizePromptFilterScope()
   }
 
@@ -212,14 +218,104 @@ class AppState: Sendable {
     refreshPromptData(selectPromptID: willRemainVisible ? toggledItemID : visiblePromptItems.first?.id)
   }
 
-  func archiveHistoryItemToPrompt(_ item: HistoryItem) {
-    guard let promptItem = promptOrganizer.moveToPrompt(item) else {
+  func archiveHistoryItemToPrompt(_ item: HistoryItem, categoryID: UUID? = nil) {
+    guard let promptItem = promptOrganizer.moveToPrompt(item, targetCategoryID: categoryID) else {
       return
     }
 
     refreshPromptData(selectPromptID: promptItem.id)
     currentScope = .prompt
     selection = promptItem.id
+  }
+
+  func createPromptBookmark(name: String) throws -> PromptCategory {
+    let category = try promptCategoryStore.createBookmark(name)
+    refreshPromptData()
+    return category
+  }
+
+  func renamePromptBookmark(_ category: PromptCategory, name: String) throws {
+    try promptCategoryStore.renameBookmark(category, to: name)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+  }
+
+  func deletePromptBookmark(_ category: PromptCategory) throws {
+    if promptFilter.selectedCategoryID == category.id {
+      promptFilter.selectedCategoryID = nil
+    }
+    try promptCategoryStore.deleteBookmark(category)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+  }
+
+  func createPromptTag(name: String) throws -> PromptTag {
+    let tag = try promptTagStore.createTag(name)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+    return tag
+  }
+
+  func findOrCreatePromptTag(name: String) throws -> PromptTag {
+    let tag = try promptTagStore.findOrCreateTag(name)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+    return tag
+  }
+
+  func renamePromptTag(_ tag: PromptTag, name: String) throws {
+    try promptTagStore.renameTag(tag, to: name)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+  }
+
+  func deletePromptTag(_ tag: PromptTag) {
+    promptFilter.selectedTagIDs.remove(tag.id)
+    promptTagStore.deleteTag(tag)
+    refreshPromptData(selectPromptID: selectedPromptItem?.id)
+  }
+
+  func assignPromptToCategory(_ item: PromptItem?, categoryID: UUID?) {
+    guard let item else { return }
+    promptOrganizer.assignPrompt(item, to: categoryID)
+    refreshPromptData(selectPromptID: item.id)
+  }
+
+  func setPromptTagIDs(_ item: PromptItem?, tagIDs: Set<UUID>) {
+    guard let item else { return }
+    promptOrganizer.setTagIDs(tagIDs, for: item)
+    refreshPromptData(selectPromptID: item.id)
+  }
+
+  func removePromptTag(_ tag: PromptTag, from item: PromptItem?) {
+    guard let item else { return }
+    promptOrganizer.removeTag(tag, from: item)
+    refreshPromptData(selectPromptID: item.id)
+  }
+
+  func promptTags(for item: PromptItem?) -> [PromptTag] {
+    guard let item else { return [] }
+    return promptTagStore.tags(for: item.id)
+  }
+
+  func promptCategoryBadgeName(for item: PromptItem?) -> String? {
+    guard let item,
+          let categoryID = item.categoryID,
+          !promptCategoryStore.isRootCategoryID(categoryID) else {
+      return nil
+    }
+    return promptCategoryStore.categoryName(for: categoryID)
+  }
+
+  func setPromptCategoryFilter(_ categoryID: UUID?) {
+    promptFilter.selectedCategoryID = categoryID
+    selectDefaultItemForCurrentScope()
+    popup.needsResize = true
+  }
+
+  func togglePromptTagFilter(_ tagID: UUID) {
+    if promptFilter.selectedTagIDs.contains(tagID) {
+      promptFilter.selectedTagIDs.remove(tagID)
+    } else {
+      promptFilter.selectedTagIDs.insert(tagID)
+    }
+    selectDefaultItemForCurrentScope()
+    popup.needsResize = true
   }
 
   private func refreshPromptData(selectPromptID: UUID? = nil) {
@@ -415,7 +511,7 @@ class AppState: Sendable {
     }
   }
 
-  private func ensurePromptWindowWidth(minWidth: CGFloat = 720) {
+  private func ensurePromptWindowWidth(minWidth: CGFloat = 980) {
     guard currentScope != .history,
           let panel = appDelegate?.panel,
           panel.frame.width < minWidth else {
@@ -427,367 +523,5 @@ class AppState: Sendable {
     frame.size.width = minWidth
     panel.setFrame(frame, display: true, animate: true)
     panel.saveWindowFrame(frame: frame)
-  }
-}
-
-enum LibraryScope: String, CaseIterable, Identifiable, Sendable {
-  case history
-  case prompt
-  case favorites
-
-  var id: Self { self }
-
-  var title: String {
-    switch self {
-    case .history:
-      return "历史"
-    case .prompt:
-      return "Prompt"
-    case .favorites:
-      return "常用"
-    }
-  }
-}
-
-enum PromptScope: Sendable {
-  case prompt
-  case favorites
-}
-
-enum PromptDuplicateResolution: Sendable {
-  case updateExisting
-  case createNewCopy
-  case cancel
-}
-
-@MainActor
-@Observable
-class PromptFilterStateStore {
-  var scope: PromptScope = .prompt
-  var searchQuery: String = ""
-  var selectedCategoryID: UUID?
-  var favoritesOnly: Bool = false
-}
-
-@MainActor
-@Observable
-class PromptCategoryStore {
-  var categories: [PromptCategory] = []
-
-  func load() {
-    let descriptor = FetchDescriptor<PromptCategory>()
-    categories = (try? Storage.shared.context.fetch(descriptor))?.sorted {
-      if $0.isSystem != $1.isSystem {
-        return $0.isSystem && !$1.isSystem
-      }
-      if $0.sortOrder != $1.sortOrder {
-        return $0.sortOrder < $1.sortOrder
-      }
-      return $0.name < $1.name
-    } ?? []
-  }
-
-  func seedDefaultsIfNeeded() {
-    let descriptor = FetchDescriptor<PromptCategory>(
-      predicate: #Predicate<PromptCategory> { $0.isSystem && $0.parentID == nil }
-    )
-
-    if (try? Storage.shared.context.fetch(descriptor).isEmpty) == false {
-      load()
-      return
-    }
-
-    let rootCategory = PromptCategory(
-      name: "Prompt",
-      parentID: nil,
-      sortOrder: 0,
-      isSystem: true,
-      symbolName: "text.quote"
-    )
-    Storage.shared.context.insert(rootCategory)
-    try? Storage.shared.context.save()
-    load()
-  }
-
-  func rootPromptCategory() -> PromptCategory? {
-    seedDefaultsIfNeeded()
-    return categories.first(where: { $0.isSystem && $0.parentID == nil })
-  }
-
-  func categoryName(for id: UUID?) -> String {
-    guard let id else { return "Prompt" }
-    return categories.first(where: { $0.id == id })?.name ?? "Prompt"
-  }
-}
-
-@MainActor
-@Observable
-class PromptTagStore {
-  var tags: [PromptTag] = []
-
-  func load() {
-    let descriptor = FetchDescriptor<PromptTag>()
-    tags = (try? Storage.shared.context.fetch(descriptor))?.sorted {
-      $0.name.localizedCompare($1.name) == .orderedAscending
-    } ?? []
-  }
-}
-
-@MainActor
-@Observable
-class PromptLibrary {
-  var items: [PromptItem] = []
-
-  func load() {
-    let descriptor = FetchDescriptor<PromptItem>()
-    items = sorted((try? Storage.shared.context.fetch(descriptor)) ?? [])
-  }
-
-  func visibleItems(searchQuery: String, favoritesOnly: Bool, selectedCategoryID: UUID?) -> [PromptItem] {
-    let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-
-    return items.filter { item in
-      if favoritesOnly && !item.isFavorite {
-        return false
-      }
-
-      if let selectedCategoryID, item.categoryID != selectedCategoryID {
-        return false
-      }
-
-      guard !trimmedQuery.isEmpty else {
-        return true
-      }
-
-      return item.title.localizedCaseInsensitiveContains(trimmedQuery) ||
-        item.plainText.localizedCaseInsensitiveContains(trimmedQuery)
-    }
-  }
-
-  func findDuplicate(normalizedText: String) -> PromptItem? {
-    let descriptor = FetchDescriptor<PromptItem>(
-      predicate: #Predicate<PromptItem> { $0.normalizedText == normalizedText }
-    )
-    return try? Storage.shared.context.fetch(descriptor).first
-  }
-
-  func toggleFavorite(_ item: PromptItem) {
-    item.isFavorite.toggle()
-    item.updatedAt = .now
-    try? Storage.shared.context.save()
-    load()
-  }
-
-  func delete(_ item: PromptItem) {
-    Storage.shared.context.delete(item)
-    try? Storage.shared.context.save()
-    load()
-  }
-
-  func markUsed(_ item: PromptItem) {
-    item.usageCount += 1
-    item.updatedAt = .now
-    try? Storage.shared.context.save()
-    load()
-  }
-
-  private func sorted(_ items: [PromptItem]) -> [PromptItem] {
-    items.sorted {
-      if $0.isFavorite != $1.isFavorite {
-        return $0.isFavorite && !$1.isFavorite
-      }
-      if $0.updatedAt != $1.updatedAt {
-        return $0.updatedAt > $1.updatedAt
-      }
-      return $0.createdAt > $1.createdAt
-    }
-  }
-}
-
-@MainActor
-@Observable
-class PromptOrganizer {
-  let promptLibrary: PromptLibrary
-  let promptCategoryStore: PromptCategoryStore
-
-  @ObservationIgnored
-  var duplicateDecisionHandler: (PromptItem) -> PromptDuplicateResolution = { existing in
-    let alert = NSAlert()
-    alert.alertStyle = .warning
-    alert.messageText = "已存在相似 Prompt"
-    alert.informativeText = "“\(existing.title)” 已经在 Prompt 中。你可以更新已有 Prompt，或新建一份副本。"
-    alert.addButton(withTitle: "更新已有 Prompt")
-    alert.addButton(withTitle: "新建副本")
-    alert.addButton(withTitle: "取消")
-
-    switch alert.runModal() {
-    case .alertFirstButtonReturn:
-      return .updateExisting
-    case .alertSecondButtonReturn:
-      return .createNewCopy
-    default:
-      return .cancel
-    }
-  }
-
-  init(promptLibrary: PromptLibrary, promptCategoryStore: PromptCategoryStore) {
-    self.promptLibrary = promptLibrary
-    self.promptCategoryStore = promptCategoryStore
-  }
-
-  func canArchive(_ historyItem: HistoryItem) -> Bool {
-    historyItem.promptPlainText != nil
-  }
-
-  func moveToPrompt(_ historyItem: HistoryItem) -> PromptItem? {
-    guard let plainText = historyItem.promptPlainText,
-          let rootCategory = promptCategoryStore.rootPromptCategory() else {
-      return nil
-    }
-
-    let normalizedText = plainText.promptNormalizedText
-    if let existingPrompt = promptLibrary.findDuplicate(normalizedText: normalizedText) {
-      switch duplicateDecisionHandler(existingPrompt) {
-      case .updateExisting:
-        existingPrompt.title = plainText.promptDisplayTitle
-        existingPrompt.plainText = plainText
-        existingPrompt.normalizedText = normalizedText
-        existingPrompt.updatedAt = .now
-        existingPrompt.usageCount += 1
-        existingPrompt.categoryID = rootCategory.id
-        existingPrompt.sourceHistoryItemID = String(describing: historyItem.persistentModelID)
-        try? Storage.shared.context.save()
-        promptLibrary.load()
-        return existingPrompt
-      case .createNewCopy:
-        break
-      case .cancel:
-        return nil
-      }
-    }
-
-    let promptItem = PromptItem(
-      title: plainText.promptDisplayTitle,
-      plainText: plainText,
-      normalizedText: normalizedText,
-      isFavorite: false,
-      createdAt: .now,
-      updatedAt: .now,
-      usageCount: 1,
-      sourceHistoryItemID: String(describing: historyItem.persistentModelID),
-      categoryID: rootCategory.id
-    )
-    Storage.shared.context.insert(promptItem)
-    try? Storage.shared.context.save()
-    promptLibrary.load()
-    return promptItem
-  }
-}
-
-@Model
-final class PromptItem {
-  var id: UUID
-  var title: String
-  var plainText: String
-  var normalizedText: String
-  var isFavorite: Bool
-  var createdAt: Date
-  var updatedAt: Date
-  var usageCount: Int
-  var sourceHistoryItemID: String?
-  var categoryID: UUID?
-
-  init(
-    id: UUID = UUID(),
-    title: String,
-    plainText: String,
-    normalizedText: String,
-    isFavorite: Bool = false,
-    createdAt: Date = .now,
-    updatedAt: Date = .now,
-    usageCount: Int = 0,
-    sourceHistoryItemID: String? = nil,
-    categoryID: UUID? = nil
-  ) {
-    self.id = id
-    self.title = title
-    self.plainText = plainText
-    self.normalizedText = normalizedText
-    self.isFavorite = isFavorite
-    self.createdAt = createdAt
-    self.updatedAt = updatedAt
-    self.usageCount = usageCount
-    self.sourceHistoryItemID = sourceHistoryItemID
-    self.categoryID = categoryID
-  }
-}
-
-@Model
-final class PromptCategory {
-  var id: UUID
-  var name: String
-  var parentID: UUID?
-  var sortOrder: Int
-  var isSystem: Bool
-  var symbolName: String
-
-  init(
-    id: UUID = UUID(),
-    name: String,
-    parentID: UUID? = nil,
-    sortOrder: Int = 0,
-    isSystem: Bool = false,
-    symbolName: String = "folder"
-  ) {
-    self.id = id
-    self.name = name
-    self.parentID = parentID
-    self.sortOrder = sortOrder
-    self.isSystem = isSystem
-    self.symbolName = symbolName
-  }
-}
-
-@Model
-final class PromptTag {
-  var id: UUID
-  var name: String
-  var colorHex: String?
-  var createdAt: Date
-
-  init(id: UUID = UUID(), name: String, colorHex: String? = nil, createdAt: Date = .now) {
-    self.id = id
-    self.name = name
-    self.colorHex = colorHex
-    self.createdAt = createdAt
-  }
-}
-
-@Model
-final class PromptItemTagLink {
-  var id: UUID
-  var promptItemID: UUID
-  var promptTagID: UUID
-
-  init(id: UUID = UUID(), promptItemID: UUID, promptTagID: UUID) {
-    self.id = id
-    self.promptItemID = promptItemID
-    self.promptTagID = promptTagID
-  }
-}
-
-private extension String {
-  var promptNormalizedText: String {
-    components(separatedBy: .whitespacesAndNewlines)
-      .filter { !$0.isEmpty }
-      .joined(separator: " ")
-      .lowercased()
-  }
-
-  var promptDisplayTitle: String {
-    trimmingCharacters(in: .whitespacesAndNewlines)
-      .replacingOccurrences(of: "\n", with: "⏎")
-      .replacingOccurrences(of: "\t", with: "⇥")
-      .shortened(to: 120)
   }
 }

@@ -6,6 +6,10 @@ struct HistoryItemView: View {
 
   @Environment(AppState.self) private var appState
 
+  private var bookmarks: [PromptCategory] {
+    appState.promptCategoryStore.bookmarkCategories
+  }
+
   var body: some View {
     ListItemView(
       id: item.id,
@@ -23,8 +27,21 @@ struct HistoryItemView: View {
     }
     .contextMenu {
       if item.item.promptPlainText != nil {
-        Button("移动到 Prompt…") {
+        Button("移动到 Prompt") {
           appState.archiveHistoryItemToPrompt(item.item)
+        }
+
+        Menu("移动到 Prompt > 子书签") {
+          if bookmarks.isEmpty {
+            Button("暂无子书签") {}
+              .disabled(true)
+          } else {
+            ForEach(bookmarks, id: \.id) { bookmark in
+              Button(bookmark.name) {
+                appState.archiveHistoryItemToPrompt(item.item, categoryID: bookmark.id)
+              }
+            }
+          }
         }
       }
     }

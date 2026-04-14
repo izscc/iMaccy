@@ -254,6 +254,7 @@ class HistoryTests: XCTestCase {
 class PromptPhase1Tests: XCTestCase {
   var promptLibrary: PromptLibrary!
   var promptCategoryStore: PromptCategoryStore!
+  var promptTagStore: PromptTagStore!
   var promptOrganizer: PromptOrganizer!
 
   override func setUp() {
@@ -261,8 +262,14 @@ class PromptPhase1Tests: XCTestCase {
     clearPromptData()
     promptLibrary = PromptLibrary()
     promptCategoryStore = PromptCategoryStore()
-    promptOrganizer = PromptOrganizer(promptLibrary: promptLibrary, promptCategoryStore: promptCategoryStore)
+    promptTagStore = PromptTagStore()
+    promptOrganizer = PromptOrganizer(
+      promptLibrary: promptLibrary,
+      promptCategoryStore: promptCategoryStore,
+      promptTagStore: promptTagStore
+    )
     promptCategoryStore.seedDefaultsIfNeeded()
+    promptTagStore.load()
     promptLibrary.load()
   }
 
@@ -361,8 +368,188 @@ class PromptPhase1Tests: XCTestCase {
     Storage.shared.context.insert(second)
     promptLibrary.load()
 
-    XCTAssertEqual(promptLibrary.visibleItems(searchQuery: "", favoritesOnly: true, selectedCategoryID: nil).count, 1)
-    XCTAssertEqual(promptLibrary.visibleItems(searchQuery: "邮件", favoritesOnly: false, selectedCategoryID: nil).first?.title, "写邮件")
+    XCTAssertEqual(
+      promptLibrary.visibleItems(
+        searchQuery: "",
+        favoritesOnly: true,
+        selectedCategoryID: nil,
+        selectedTagIDs: [],
+        tagStore: promptTagStore
+      ).count,
+      1
+    )
+    XCTAssertEqual(
+      promptLibrary.visibleItems(
+        searchQuery: "邮件",
+        favoritesOnly: false,
+        selectedCategoryID: nil,
+        selectedTagIDs: [],
+        tagStore: promptTagStore
+      ).first?.title,
+      "写邮件"
+    )
+  }
+
+  private func clearPromptData() {
+    try? Storage.shared.context.delete(model: PromptItemTagLink.self)
+    try? Storage.shared.context.delete(model: PromptTag.self)
+    try? Storage.shared.context.delete(model: PromptItem.self)
+    try? Storage.shared.context.delete(model: PromptCategory.self)
+    try? Storage.shared.context.save()
+  }
+
+  private func historyItem(_ value: String) -> HistoryItem {
+    let contents = [
+      HistoryItemContent(
+        type: NSPasteboard.PasteboardType.string.rawValue,
+        value: value.data(using: .utf8)
+      )
+    ]
+    let item = HistoryItem()
+    Storage.shared.context.insert(item)
+    item.contents = contents
+    item.title = item.generateTitle()
+    return item
+  }
+}
+
+@MainActor
+class PromptPhase2Tests: XCTestCase {
+  var promptLibrary: PromptLibrary!
+  var promptCategoryStore: PromptCategoryStore!
+  var promptTagStore: PromptTagStore!
+  var promptOrganizer: PromptOrganizer!
+
+  override func setUp() {
+    super.setUp()
+    clearPromptData()
+    promptLibrary = PromptLibrary()
+    promptCategoryStore = PromptCategoryStore()
+    promptTagStore = PromptTagStore()
+    promptOrganizer = PromptOrganizer(
+      promptLibrary: promptLibrary,
+      promptCategoryStore: promptCategoryStore,
+      promptTagStore: promptTagStore
+    )
+    promptCategoryStore.seedDefaultsIfNeeded()
+    promptTagStore.load()
+    promptLibrary.load()
+  }
+
+  override func tearDown() {
+    clearPromptData()
+    super.tearDown()
+  }
+
+  func testCreateRenameDeleteBookmarkMovesPromptsToRoot() throws {
+    let bookmark = try promptCategoryStore.createBookmark("开发")
+    let root = try XCTUnwrap(promptCategoryStore.rootPromptCategory())
+    let prompt = PromptItem(
+      title: "代码审查",
+      plainText: "请 review 这段代码",
+      normalizedText: "请 review 这段代码",
+      categoryID: bookmark.id
+    )
+    Storage.shared.context.insert(prompt)
+    try Storage.shared.context.save()
+
+    try promptCategoryStore.renameBookmark(bookmark, to: "开发助手")
+    XCTAssertEqual(promptCategoryStore.bookmarkCategories.first?.name, "开发助手")
+
+    try promptCategoryStore.deleteBookmark(bookmark)
+    promptLibrary.load()
+
+    XCTAssertEqual(promptCategoryStore.bookmarkCategories.count, 0)
+    XCTAssertEqual(promptLibrary.items.first?.categoryID, root.id)
+  }
+
+  func testBookmarkNamesMustBeUniqueCaseInsensitive() throws {
+    _ = try promptCategoryStore.createBookmark("写作")
+    XCTAssertThrowsError(try promptCategoryStore.createBookmark("  写作  ")) { error in
+      XCTAssertEqual(error as? PromptDomainError, .duplicateBookmarkName)
+    }
+  }
+
+  func testCreateRenameDeleteTagCleansLinks() throws {
+    let tag = try promptTagStore.createTag("常用")
+    let prompt = PromptItem(
+      title: "发布公告",
+      plainText: "帮我写一份发布公告",
+      normalizedText: "帮我写一份发布公告"
+    )
+    Storage.shared.context.insert(prompt)
+    try Storage.shared.context.save()
+
+    promptTagStore.setTagIDs(Set([tag.id]), for: prompt.id)
+    XCTAssertEqual(promptTagStore.tags(for: prompt.id).count, 1)
+
+    try promptTagStore.renameTag(tag, to: "高频")
+    XCTAssertEqual(promptTagStore.tags.first?.name, "高频")
+
+    promptTagStore.deleteTag(tag)
+    XCTAssertEqual(promptTagStore.tags.count, 0)
+    XCTAssertEqual(promptTagStore.links.count, 0)
+  }
+
+  func testTagNamesMustBeUniqueCaseInsensitive() throws {
+    _ = try promptTagStore.createTag("邮件")
+    XCTAssertThrowsError(try promptTagStore.createTag("  邮件 ")) { error in
+      XCTAssertEqual(error as? PromptDomainError, .duplicateTagName)
+    }
+  }
+
+  func testOrganizerCanArchiveIntoBookmarkAndManageTags() throws {
+    let bookmark = try promptCategoryStore.createBookmark("运营")
+    let historyItem = historyItem("为这个活动写一份宣传文案")
+
+    let prompt = try XCTUnwrap(promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id))
+    XCTAssertEqual(prompt.categoryID, bookmark.id)
+
+    let firstTag = try promptTagStore.createTag("营销")
+    let secondTag = try promptTagStore.createTag("文案")
+    promptOrganizer.setTagIDs(Set([firstTag.id, secondTag.id]), for: prompt)
+    XCTAssertEqual(Set(promptTagStore.tags(for: prompt.id).map(\.name)), Set(["营销", "文案"]))
+
+    promptOrganizer.removeTag(firstTag, from: prompt)
+    XCTAssertEqual(promptTagStore.tags(for: prompt.id).map(\.name), ["文案"])
+  }
+
+  func testVisibleItemsSupportsCategoryFavoritesSearchAndTagAND() throws {
+    let dev = try promptCategoryStore.createBookmark("开发")
+    let ops = try promptCategoryStore.createBookmark("运维")
+    let tagA = try promptTagStore.createTag("代码")
+    let tagB = try promptTagStore.createTag("审查")
+
+    let first = PromptItem(
+      title: "代码审查",
+      plainText: "请 review 这段代码并指出风险",
+      normalizedText: "请 review 这段代码并指出风险",
+      isFavorite: true,
+      categoryID: dev.id
+    )
+    let second = PromptItem(
+      title: "部署回滚",
+      plainText: "给我一份回滚预案",
+      normalizedText: "给我一份回滚预案",
+      isFavorite: false,
+      categoryID: ops.id
+    )
+    Storage.shared.context.insert(first)
+    Storage.shared.context.insert(second)
+    try Storage.shared.context.save()
+
+    promptTagStore.setTagIDs(Set([tagA.id, tagB.id]), for: first.id)
+    promptTagStore.setTagIDs(Set([tagA.id]), for: second.id)
+    promptLibrary.load()
+
+    let result = promptLibrary.visibleItems(
+      searchQuery: "代码",
+      favoritesOnly: true,
+      selectedCategoryID: dev.id,
+      selectedTagIDs: Set([tagA.id, tagB.id]),
+      tagStore: promptTagStore
+    )
+    XCTAssertEqual(result.map(\.title), ["代码审查"])
   }
 
   private func clearPromptData() {
