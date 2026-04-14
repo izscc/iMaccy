@@ -34,5 +34,7 @@
 	<true/>
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/izscc/iMaccy/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>Rd+xSZPW5oowwxWdqfWnsfq4VMZfFaK8gaTq+5lcsP0=</string>
 </dict>
 </plist>

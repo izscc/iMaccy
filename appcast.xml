@@ -4,32 +4,28 @@
     <title>iMaccy</title>
     <link>https://raw.githubusercontent.com/izscc/iMaccy/main/appcast.xml</link>
     <description>Most recent changes with links to updates.</description>
-    <language>en</language>
+    <language>zh-CN</language>
     <item>
-      <title>2.3.0</title>
+      <title>2.4.0</title>
       <description>
         <![CDATA[
           <ul>
-            <li>Added Belarusian translation.</li>
-            <li>Added separator line between pinned and unpinned items.</li>
-            <li>Added scrolling support for large texts in preview popover.</li>
-            <li>Added preview for HEIC image files.</li>
-            <li>Improved performance for large text copies.</li>
-            <li>Improved handling of hovered items.</li>
-            <li>Fixed paste + paste without formatting combination.</li>
-            <li>Fixed issue when file URLs were removed when pasting without formatting.</li>
-            <li>Fixed the issue when the first pinned item was not pre-selected and there were no unpinned items.</li>
+            <li>完成 iMaccy 品牌收口，默认工程、Bundle ID 与更新源全部切换到 iMaccy。</li>
+            <li>新增 Prompt Library：支持 Prompt 归档、常用 Prompt、标签与子书签管理。</li>
+            <li>新增 Prompt 三栏工作区，支持最近子书签、批量操作与 #标签 搜索。</li>
+            <li>新增 Prompt 设置页，可配置默认视图、最近子书签数量与列表摘要显示。</li>
           </ul>
         ]]>
       </description>
-      <pubDate>2024-12-11</pubDate>
-      <releaseNotesLink>https://github.com/izscc/iMaccy/releases/tag/2.3.0</releaseNotesLink>
+      <pubDate>Wed, 15 Apr 2026 03:00:00 +0800</pubDate>
+      <releaseNotesLink>https://github.com/izscc/iMaccy/releases/tag/2.4.0</releaseNotesLink>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <enclosure
-        url="https://github.com/izscc/iMaccy/releases/download/2.3.0/iMaccy.app.zip"
-        sparkle:version="54"
-        sparkle:shortVersionString="2.3.0"
-        length="0"
+        url="https://github.com/izscc/iMaccy/releases/download/2.4.0/iMaccy.app.zip"
+        sparkle:version="55"
+        sparkle:shortVersionString="2.4.0"
+        sparkle:edSignature="ziKyUE+b7Wof3zzszEW/w8JXs6sLkwTIcoqwBOMyJ5Q4UKKHC63E+I0BatGoiR69iKJoGd+ykJuHhouF8bsUAw=="
+        length="3727429"
         type="application/octet-stream"
       />
     </item>
