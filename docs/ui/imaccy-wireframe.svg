@@ -1,0 +1,255 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
+  <title id="title">iMaccy UI Wireframe</title>
+  <desc id="desc">A single-page SVG concept for iMaccy, combining Maccy-like minimalism with tags, prompt categories, sub-bookmarks, and frequent prompts.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f7fb"/>
+      <stop offset="100%" stop-color="#eef1f7"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#fbfcfe" stop-opacity="0.96"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 15px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #64748b; }
+      .section { font: 700 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; letter-spacing: .08em; text-transform: uppercase; fill: #94a3b8; }
+      .label { font: 600 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #1e293b; }
+      .body { font: 400 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #64748b; }
+      .small { font: 500 12px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #64748b; }
+      .mono { font: 500 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; fill: #475569; }
+      .chipText { font: 600 12px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #334155; }
+      .nav { font: 500 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #334155; }
+      .navActive { font: 700 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #0f172a; }
+      .cardTitle { font: 650 15px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #0f172a; }
+      .tag { font: 600 11px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; fill: #0f766e; }
+      .muted { fill: #e2e8f0; }
+      .line { stroke: #e5e7eb; stroke-width: 1; }
+      .thinLine { stroke: #eef2f7; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#bg)"/>
+
+  <!-- Decorative background blobs -->
+  <circle cx="162" cy="122" r="86" fill="#dbeafe" opacity="0.6"/>
+  <circle cx="1490" cy="164" r="118" fill="#ede9fe" opacity="0.45"/>
+  <circle cx="1446" cy="1030" r="170" fill="#dcfce7" opacity="0.35"/>
+
+  <!-- Window -->
+  <g filter="url(#shadow)">
+    <rect x="120" y="90" width="1360" height="1020" rx="28" fill="url(#panel)" stroke="#dbe3ef"/>
+  </g>
+
+  <!-- Title bar -->
+  <rect x="120" y="90" width="1360" height="72" rx="28" fill="#ffffff" opacity="0.75"/>
+  <circle cx="156" cy="126" r="7" fill="#fb7185"/>
+  <circle cx="180" cy="126" r="7" fill="#fbbf24"/>
+  <circle cx="204" cy="126" r="7" fill="#34d399"/>
+
+  <text x="240" y="132" class="title" font-size="22">iMaccy</text>
+  <text x="338" y="132" class="subtitle">Minimal prompt clipboard workspace</text>
+
+  <!-- Search -->
+  <g filter="url(#softShadow)">
+    <rect x="1018" y="108" width="404" height="40" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="1040" y="134" class="subtitle">Search prompts, tags, and bookmarks…</text>
+  </g>
+
+  <!-- Sidebar -->
+  <rect x="120" y="162" width="288" height="948" rx="0" fill="#fcfdff"/>
+  <line x1="408" y1="162" x2="408" y2="1110" class="line"/>
+
+  <text x="152" y="210" class="section">Library</text>
+
+  <g transform="translate(140 230)">
+    <rect x="0" y="0" width="248" height="42" rx="12" fill="#e8f1ff"/>
+    <text x="16" y="26" class="navActive">All Prompts</text>
+    <text x="212" y="26" class="small">124</text>
+  </g>
+  <g transform="translate(140 280)">
+    <rect x="0" y="0" width="248" height="42" rx="12" fill="#ffffff" stroke="#eef2f7"/>
+    <text x="16" y="26" class="nav">Recent</text>
+    <text x="212" y="26" class="small">18</text>
+  </g>
+  <g transform="translate(140 330)">
+    <rect x="0" y="0" width="248" height="42" rx="12" fill="#ffffff" stroke="#eef2f7"/>
+    <text x="16" y="26" class="nav">Favorites</text>
+    <text x="212" y="26" class="small">9</text>
+  </g>
+
+  <text x="152" y="434" class="section">Tags</text>
+  <g transform="translate(140 452)">
+    <rect x="0" y="0" width="248" height="36" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="16" y="23" class="chipText">#marketing</text>
+    <text x="192" y="23" class="small">24</text>
+  </g>
+  <g transform="translate(140 496)">
+    <rect x="0" y="0" width="248" height="36" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="16" y="23" class="chipText">#code-review</text>
+    <text x="182" y="23" class="small">19</text>
+  </g>
+  <g transform="translate(140 540)">
+    <rect x="0" y="0" width="248" height="36" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="16" y="23" class="chipText">#email</text>
+    <text x="198" y="23" class="small">12</text>
+  </g>
+  <g transform="translate(140 584)">
+    <rect x="0" y="0" width="248" height="36" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="16" y="23" class="chipText">#launch</text>
+    <text x="196" y="23" class="small">7</text>
+  </g>
+
+  <text x="152" y="676" class="section">Prompt Categories</text>
+  <g transform="translate(140 694)">
+    <rect x="0" y="0" width="248" height="72" rx="16" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="16" y="26" class="label">Writing</text>
+    <text x="16" y="48" class="body">Brainstorm, refine, summarize</text>
+  </g>
+  <g transform="translate(140 776)">
+    <rect x="0" y="0" width="248" height="72" rx="16" fill="#eff6ff" stroke="#bfdbfe"/>
+    <text x="16" y="26" class="label">Development</text>
+    <text x="16" y="48" class="body">Review, debug, scaffold</text>
+  </g>
+  <g transform="translate(140 858)">
+    <rect x="0" y="0" width="248" height="72" rx="16" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="16" y="26" class="label">Ops</text>
+    <text x="16" y="48" class="body">Release, rollback, monitor</text>
+  </g>
+
+  <!-- Main content header -->
+  <text x="448" y="210" class="section">Prompt board</text>
+  <text x="448" y="248" class="title" font-size="28">Frequent prompts and bookmarked sub-collections</text>
+  <text x="448" y="280" class="subtitle">A Maccy-like list, tuned for prompt reuse, tagging, and fast navigation.</text>
+
+  <!-- Top stats -->
+  <g transform="translate(448 308)">
+    <rect x="0" y="0" width="194" height="80" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+    <text x="20" y="28" class="small">Saved prompts</text>
+    <text x="20" y="56" class="title" font-size="26">124</text>
+  </g>
+  <g transform="translate(654 308)">
+    <rect x="0" y="0" width="194" height="80" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+    <text x="20" y="28" class="small">Used today</text>
+    <text x="20" y="56" class="title" font-size="26">38</text>
+  </g>
+  <g transform="translate(860 308)">
+    <rect x="0" y="0" width="194" height="80" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+    <text x="20" y="28" class="small">Tags</text>
+    <text x="20" y="56" class="title" font-size="26">18</text>
+  </g>
+  <g transform="translate(1066 308)">
+    <rect x="0" y="0" width="194" height="80" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+    <text x="20" y="28" class="small">Sub-bookmarks</text>
+    <text x="20" y="56" class="title" font-size="26">11</text>
+  </g>
+
+  <!-- Prompt list -->
+  <g transform="translate(448 414)">
+    <rect x="0" y="0" width="714" height="504" rx="22" fill="#ffffff" stroke="#e5e7eb"/>
+    <text x="24" y="34" class="section">Frequently used prompts</text>
+
+    <!-- row 1 -->
+    <g transform="translate(20 54)">
+      <rect x="0" y="0" width="674" height="84" rx="18" fill="#fbfdff" stroke="#eef2f7"/>
+      <circle cx="28" cy="28" r="12" fill="#dbeafe"/>
+      <text x="52" y="24" class="cardTitle">Summarize release notes</text>
+      <text x="52" y="46" class="body">Turn a changelog into a concise user-facing summary.</text>
+      <rect x="516" y="20" width="78" height="24" rx="12" fill="#ecfeff"/>
+      <text x="530" y="36" class="tag">#launch</text>
+      <rect x="600" y="20" width="60" height="24" rx="12" fill="#f1f5f9"/>
+      <text x="615" y="36" class="small">12×</text>
+    </g>
+
+    <!-- row 2 -->
+    <g transform="translate(20 150)">
+      <rect x="0" y="0" width="674" height="84" rx="18" fill="#fbfdff" stroke="#eef2f7"/>
+      <circle cx="28" cy="28" r="12" fill="#dcfce7"/>
+      <text x="52" y="24" class="cardTitle">Review this pull request</text>
+      <text x="52" y="46" class="body">Explain risks, edge cases, and readability improvements.</text>
+      <rect x="500" y="20" width="90" height="24" rx="12" fill="#eef2ff"/>
+      <text x="514" y="36" class="tag" fill="#4338ca">#code-review</text>
+      <rect x="600" y="20" width="60" height="24" rx="12" fill="#f1f5f9"/>
+      <text x="615" y="36" class="small">28×</text>
+    </g>
+
+    <!-- row 3 -->
+    <g transform="translate(20 246)">
+      <rect x="0" y="0" width="674" height="84" rx="18" fill="#fbfdff" stroke="#eef2f7"/>
+      <circle cx="28" cy="28" r="12" fill="#fde68a"/>
+      <text x="52" y="24" class="cardTitle">Write a launch email</text>
+      <text x="52" y="46" class="body">Create a friendly product announcement with a clear CTA.</text>
+      <rect x="516" y="20" width="78" height="24" rx="12" fill="#fff7ed"/>
+      <text x="530" y="36" class="tag" fill="#c2410c">#email</text>
+      <rect x="600" y="20" width="60" height="24" rx="12" fill="#f1f5f9"/>
+      <text x="615" y="36" class="small">16×</text>
+    </g>
+
+    <!-- row 4 -->
+    <g transform="translate(20 342)">
+      <rect x="0" y="0" width="674" height="84" rx="18" fill="#fbfdff" stroke="#eef2f7"/>
+      <circle cx="28" cy="28" r="12" fill="#e9d5ff"/>
+      <text x="52" y="24" class="cardTitle">Refine an idea</text>
+      <text x="52" y="46" class="body">Expand rough notes into a sharp, structured brief.</text>
+      <rect x="516" y="20" width="78" height="24" rx="12" fill="#f3e8ff"/>
+      <text x="530" y="36" class="tag" fill="#7c3aed">#writing</text>
+      <rect x="600" y="20" width="60" height="24" rx="12" fill="#f1f5f9"/>
+      <text x="615" y="36" class="small">33×</text>
+    </g>
+  </g>
+
+  <!-- Right detail panel -->
+  <g filter="url(#softShadow)">
+    <rect x="1184" y="414" width="212" height="504" rx="22" fill="#ffffff" stroke="#e5e7eb"/>
+  </g>
+  <text x="1208" y="448" class="section">Active prompt</text>
+  <text x="1208" y="478" class="cardTitle">Review this pull request</text>
+  <text x="1208" y="504" class="body">Markdown template</text>
+
+  <rect x="1208" y="524" width="164" height="32" rx="12" fill="#f8fafc" stroke="#e5e7eb"/>
+  <text x="1224" y="545" class="mono">/pr-review</text>
+
+  <text x="1208" y="586" class="section">Tags</text>
+  <g transform="translate(1208 596)">
+    <rect x="0" y="0" width="76" height="30" rx="15" fill="#eef2ff"/>
+    <text x="13" y="20" class="tag" fill="#4338ca">#code</text>
+  </g>
+  <g transform="translate(1292 596)">
+    <rect x="0" y="0" width="76" height="30" rx="15" fill="#ecfeff"/>
+    <text x="13" y="20" class="tag">#team</text>
+  </g>
+  <g transform="translate(1208 634)">
+    <rect x="0" y="0" width="76" height="30" rx="15" fill="#fff7ed"/>
+    <text x="13" y="20" class="tag" fill="#c2410c">#release</text>
+  </g>
+
+  <text x="1208" y="702" class="section">Sub-bookmarks</text>
+  <rect x="1208" y="716" width="164" height="56" rx="16" fill="#f8fafc" stroke="#e5e7eb"/>
+  <text x="1222" y="740" class="label">PR triage</text>
+  <text x="1222" y="758" class="small">Short, blunt, actionable</text>
+  <rect x="1208" y="782" width="164" height="56" rx="16" fill="#f8fafc" stroke="#e5e7eb"/>
+  <text x="1222" y="806" class="label">Design notes</text>
+  <text x="1222" y="824" class="small">Long-form critique</text>
+
+  <text x="1208" y="888" class="section">Frequency</text>
+  <rect x="1208" y="902" width="164" height="14" rx="7" fill="#e2e8f0"/>
+  <rect x="1208" y="902" width="126" height="14" rx="7" fill="#60a5fa"/>
+  <text x="1208" y="940" class="small">Used 28 times this week</text>
+
+  <!-- Footer strip -->
+  <line x1="448" y1="952" x2="1396" y2="952" class="line"/>
+  <text x="448" y="984" class="section">Interaction cues</text>
+  <text x="448" y="1010" class="subtitle">⌘K for quick search · Tags filter instantly · Bookmarks nest under categories · Frequent prompts float to the top</text>
+
+  <g transform="translate(448 1030)">
+    <rect x="0" y="0" width="944" height="60" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="20" y="24" class="label">Design intent</text>
+    <text x="20" y="44" class="body">Keep Maccy’s quiet visual rhythm, but add enough structure for prompt management without clutter.</text>
+  </g>
+</svg>
