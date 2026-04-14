@@ -32,13 +32,15 @@ struct Get: AppIntent, CustomIntentMigratedAppIntent {
   }
 
   func perform() async throws -> some IntentResult & ReturnsValue<HistoryItemAppEntity> {
-    var item: HistoryItem?
-    if selected {
-      item = AppState.shared.history.selectedItem?.item
-    } else {
-      let index = number - positionOffset
-      if AppState.shared.history.items.count >= index {
-        item = AppState.shared.history.items[index].item
+    let item: HistoryItem? = await MainActor.run {
+      if selected {
+        return AppState.shared.history.selectedItem?.item
+      } else {
+        let index = number - positionOffset
+        if AppState.shared.history.items.count >= index {
+          return AppState.shared.history.items[index].item
+        }
+        return nil
       }
     }
 
