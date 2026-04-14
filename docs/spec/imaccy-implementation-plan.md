@@ -76,24 +76,30 @@
 ## 3. 建议新增文件
 
 ### Models
-- `Models/LibraryNode.swift`
-- `Models/ItemTagLink.swift`
+- `Models/PromptItem.swift`
+- `Models/PromptCategory.swift`
+- `Models/PromptTag.swift`
+- `Models/PromptItemTagLink.swift`
 
 ### Observables
-- `Observables/LibraryStore.swift`
-- `Observables/FilterStateStore.swift`
+- `Observables/PromptLibrary.swift`
+- `Observables/PromptCategoryStore.swift`
+- `Observables/PromptTagStore.swift`
+- `Observables/PromptFilterStateStore.swift`
 - `Observables/PromptOrganizer.swift`
 
 ### Views
-- `Views/LibrarySidebarView.swift`
-- `Views/FilterSegmentView.swift`
-- `Views/TagChipView.swift`
+- `Views/PromptBrowserView.swift`
+- `Views/PromptSidebarView.swift`
+- `Views/PromptListView.swift`
+- `Views/PromptRowView.swift`
+- `Views/PromptTagChipView.swift`
 - `Views/PromptInspectorView.swift`
 - `Views/PromptBookmarkPickerView.swift`
 - `Views/ItemContextMenuModifier.swift`
 
 ### Settings
-- `Settings/LibrarySettingsPane.swift`
+- `Settings/PromptSettingsPane.swift`
 
 ---
 

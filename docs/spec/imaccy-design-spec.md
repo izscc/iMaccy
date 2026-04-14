@@ -641,12 +641,12 @@ docs/ui/notes.md
 
 ```swift
 @Observable
-final class LibraryStore {
-  var nodes: [LibraryNode] = []
+final class PromptCategoryStore {
+  var categories: [PromptCategory] = []
 
   func seedDefaultsIfNeeded() {
-    guard !nodes.contains(where: { $0.kind == .promptRoot }) else { return }
-    nodes.append(.promptRoot(name: "Prompt"))
+    guard !categories.contains(where: { $0.isSystem && $0.parentID == nil }) else { return }
+    categories.append(.systemRoot(name: "Prompt"))
   }
 }
 ```
@@ -711,7 +711,7 @@ final class LibraryStore {
 
 ### 风险 2：数据模型扩展影响性能
 
-**应对：** 维持 `HistoryItem` 为主表，分类关系单独建模；避免在主列表渲染时做高成本 join。
+**应对：** 把 Prompt 域独立出来，避免在原始历史列表上做高成本关系查询；Prompt 列表单独索引和过滤。
 
 ### 风险 3：Prompt 收藏与 Pin 语义混淆
 
@@ -721,7 +721,7 @@ final class LibraryStore {
 
 ### 风险 4：迁移老用户数据复杂
 
-**应对：** 第一次迁移只做 schema 扩展，不修改已有历史内容；仅插入系统 Prompt 根分类。
+**应对：** 第一次迁移只做 schema 扩展，不修改已有历史内容；仅新增 Prompt 域表和系统 Prompt 根分类。
 
 ---
 
