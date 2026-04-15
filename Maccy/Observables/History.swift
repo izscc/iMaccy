@@ -230,11 +230,7 @@ class History { // swiftlint:disable:this type_body_length
       AppState.shared.popup.close()
       Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
       if Defaults[.pasteByDefault] {
-        AppState.shared.popup.reactivatePreviousApplication()
-        Task {
-          try? await Task.sleep(for: .milliseconds(80))
-          Clipboard.shared.paste()
-        }
+        Clipboard.shared.paste()
       }
     } else {
       switch HistoryItemAction(modifierFlags) {
@@ -244,40 +240,17 @@ class History { // swiftlint:disable:this type_body_length
       case .paste:
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item)
-        AppState.shared.popup.reactivatePreviousApplication()
-        Task {
-          try? await Task.sleep(for: .milliseconds(80))
-          Clipboard.shared.paste()
-        }
+        Clipboard.shared.paste()
       case .pasteWithoutFormatting:
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item, removeFormatting: true)
-        AppState.shared.popup.reactivatePreviousApplication()
-        Task {
-          try? await Task.sleep(for: .milliseconds(80))
-          Clipboard.shared.paste()
-        }
+        Clipboard.shared.paste()
       case .unknown:
         return
       }
     }
 
     Task {
-      searchQuery = ""
-    }
-  }
-
-  @MainActor
-  func selectFromPointer(_ item: HistoryItemDecorator?) {
-    guard let item else { return }
-
-    AppState.shared.popup.close()
-    Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
-    AppState.shared.popup.reactivatePreviousApplication()
-
-    Task {
-      try? await Task.sleep(for: .milliseconds(80))
-      Clipboard.shared.paste()
       searchQuery = ""
     }
   }
