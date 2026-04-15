@@ -256,6 +256,19 @@ class History { // swiftlint:disable:this type_body_length
   }
 
   @MainActor
+  func selectFromPointer(_ item: HistoryItemDecorator?) {
+    guard let item else { return }
+
+    AppState.shared.popup.close()
+    Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
+    Clipboard.shared.paste()
+
+    Task {
+      searchQuery = ""
+    }
+  }
+
+  @MainActor
   func togglePin(_ item: HistoryItemDecorator?) {
     guard let item else { return }
 
