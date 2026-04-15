@@ -568,17 +568,24 @@ private struct PromptRowView: View {
         }
       }
     }
-    .onTapGesture(count: 2) {
-      onActivate()
-    }
-    .onTapGesture {
-      let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
-      if modifiers.contains(.command) {
-        onToggleMultiSelection()
-      } else {
-        onSelect()
-      }
-    }
+    .contentShape(.rect)
+    .gesture(
+      TapGesture(count: 2)
+        .exclusively(before: TapGesture())
+        .onEnded { value in
+          switch value {
+          case .first:
+            onActivate()
+          case .second:
+            let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            if modifiers.contains(.command) {
+              onToggleMultiSelection()
+            } else {
+              onSelect()
+            }
+          }
+        }
+    )
     .contextMenu {
       Button(item.isFavorite ? "取消收藏" : "收藏") {
         onToggleFavorite()
