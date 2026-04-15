@@ -219,18 +219,20 @@ class History { // swiftlint:disable:this type_body_length
   @MainActor
   func select(_ item: HistoryItemDecorator?) {
     guard let item else {
+      DebugPasteLog.write("History.select nil")
       return
     }
+    DebugPasteLog.write("History.select title=\(item.title)")
 
     let modifierFlags = NSApp.currentEvent?.modifierFlags
       .intersection(.deviceIndependentFlagsMask)
       .subtracting([.capsLock, .numericPad, .function]) ?? []
 
     if modifierFlags.isEmpty {
-      guard !Defaults[.pasteByDefault] || Accessibility.check() else { return }
       AppState.shared.popup.close()
       Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
       if Defaults[.pasteByDefault] {
+        _ = Accessibility.check()
         Clipboard.shared.paste()
       }
     } else {
@@ -239,12 +241,12 @@ class History { // swiftlint:disable:this type_body_length
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item)
       case .paste:
-        guard Accessibility.check() else { return }
+        _ = Accessibility.check()
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item)
         Clipboard.shared.paste()
       case .pasteWithoutFormatting:
-        guard Accessibility.check() else { return }
+        _ = Accessibility.check()
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item, removeFormatting: true)
         Clipboard.shared.paste()
@@ -260,11 +262,15 @@ class History { // swiftlint:disable:this type_body_length
 
   @MainActor
   func selectFromPointer(_ item: HistoryItemDecorator?) {
-    guard let item else { return }
-    guard Accessibility.check() else { return }
+    guard let item else {
+      DebugPasteLog.write("History.selectFromPointer nil")
+      return
+    }
+    DebugPasteLog.write("History.selectFromPointer title=\(item.title)")
 
     AppState.shared.popup.close()
     Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
+    _ = Accessibility.check()
     AppState.shared.popup.restoreFocusForPasting()
 
     Task {

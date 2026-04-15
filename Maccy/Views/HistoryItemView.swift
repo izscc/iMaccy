@@ -25,13 +25,9 @@ struct HistoryItemView: View {
     ) {
       Text(verbatim: item.title)
     }
-    .contentShape(.rect)
-    .overlay {
-      ItemClickCapture(
-        onSingleClick: { _ in
-          appState.history.selectFromPointer(item)
-        }
-      )
+    .onTapGesture {
+      DebugPasteLog.write("HistoryItemView single tap \(item.title)")
+      appState.history.select(item)
     }
     .contextMenu {
       if item.item.promptPlainText != nil {

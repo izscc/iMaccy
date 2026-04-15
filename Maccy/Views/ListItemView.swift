@@ -128,7 +128,11 @@ struct ItemClickCapture: NSViewRepresentable {
     override func mouseUp(with event: NSEvent) {
       let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
       if event.clickCount >= 2 {
-        onDoubleClick?()
+        if let onDoubleClick {
+          onDoubleClick()
+        } else {
+          onSingleClick?(modifiers)
+        }
       } else {
         onSingleClick?(modifiers)
       }

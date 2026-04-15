@@ -229,32 +229,35 @@ class AppState: Sendable {
   }
 
   func selectPrompt(_ item: PromptItem?) {
-    guard let item else { return }
-    guard !Defaults[.pasteByDefault] || Accessibility.check() else { return }
+    guard let item else {
+      DebugPasteLog.write("AppState.selectPrompt nil")
+      return
+    }
+    DebugPasteLog.write("AppState.selectPrompt title=\(item.title)")
 
     promptLibrary.markUsed(item)
     popup.close()
     Clipboard.shared.copy(item.plainText)
     if Defaults[.pasteByDefault] {
+      _ = Accessibility.check()
       Clipboard.shared.paste()
     }
     activeSearchQuery = ""
   }
 
   func selectPromptFromPointer(_ item: PromptItem?) {
-    guard let item else { return }
-    guard Accessibility.check() else { return }
+    guard let item else {
+      DebugPasteLog.write("AppState.selectPromptFromPointer nil")
+      return
+    }
+    DebugPasteLog.write("AppState.selectPromptFromPointer title=\(item.title)")
 
     promptLibrary.markUsed(item)
     popup.close()
     Clipboard.shared.copy(item.plainText)
-    popup.restoreFocusForPasting()
-
-    Task {
-      try? await Task.sleep(for: .milliseconds(80))
-      Clipboard.shared.paste()
-      activeSearchQuery = ""
-    }
+    _ = Accessibility.check()
+    Clipboard.shared.paste()
+    activeSearchQuery = ""
   }
 
   func selectPromptListItem(_ item: PromptItem?) {

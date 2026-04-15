@@ -62,7 +62,7 @@ struct PromptWorkspaceView: View {
           badgeNameForItem: { appState.promptCategoryBadgeName(for: $0) },
           onSelect: { appState.selectPromptListItem($0) },
           onToggleMultiSelection: { appState.togglePromptMultiSelection($0) },
-          onActivate: { appState.selectPromptFromPointer($0) },
+          onActivate: { appState.selectPrompt($0) },
           onToggleFavorite: { appState.toggleFavoritePrompt($0) },
           onMoveToRecentBookmark: { item, category in appState.assignPromptToCategory(item, categoryID: category.id) },
           onMoveToRoot: { appState.assignPromptToCategory($0, categoryID: nil) },
@@ -569,19 +569,18 @@ private struct PromptRowView: View {
       }
     }
     .contentShape(.rect)
-    .overlay {
-      ItemClickCapture(
-        onSingleClick: { modifiers in
-          if modifiers.contains(.command) {
-            onToggleMultiSelection()
-          } else {
-            onSelect()
-          }
-        },
-        onDoubleClick: {
-          onActivate()
-        }
-      )
+    .onTapGesture(count: 2) {
+      DebugPasteLog.write("PromptRow double tap title=\(item.title)")
+      onActivate()
+    }
+    .onTapGesture {
+      let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      DebugPasteLog.write("PromptRow single tap title=\(item.title) modifiers=\(modifiers.rawValue)")
+      if modifiers.contains(.command) {
+        onToggleMultiSelection()
+      } else {
+        onSelect()
+      }
     }
     .contextMenu {
       Button(item.isFavorite ? "取消收藏" : "收藏") {

@@ -110,6 +110,7 @@ class Clipboard {
 
   // Based on https://github.com/Clipy/Clipy/blob/develop/Clipy/Sources/Services/PasteService.swift.
   func paste() {
+    DebugPasteLog.write("Clipboard.paste invoked")
     Accessibility.check()
 
     // Add flag that left/right modifier key has been pressed.
@@ -131,10 +132,12 @@ class Clipboard {
 
     let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: true)
     let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: false)
+    DebugPasteLog.write("Clipboard.paste key=\(vCode) flags=\(cmdFlag.rawValue)")
     keyVDown?.flags = cmdFlag
     keyVUp?.flags = cmdFlag
     keyVDown?.post(tap: .cgSessionEventTap)
     keyVUp?.post(tap: .cgSessionEventTap)
+    DebugPasteLog.write("Clipboard.paste posted")
   }
 
   func clear() {

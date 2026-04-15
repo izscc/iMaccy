@@ -6,26 +6,26 @@
     <description>Most recent changes with links to updates.</description>
     <language>zh-CN</language>
     <item>
-      <title>2.4.0</title>
+      <title>2.4.1</title>
       <description>
         <![CDATA[
           <ul>
-            <li>完成 iMaccy 品牌收口，默认工程、Bundle ID 与更新源全部切换到 iMaccy。</li>
-            <li>新增 Prompt Library：支持 Prompt 归档、常用 Prompt、标签与子书签管理。</li>
-            <li>新增 Prompt 三栏工作区，支持最近子书签、批量操作与 #标签 搜索。</li>
-            <li>新增 Prompt 设置页，可配置默认视图、最近子书签数量与列表摘要显示。</li>
+            <li>修复 Prompt 页面新建子书签/标签弹层一闪消失的问题。</li>
+            <li>优化历史页尺寸记忆，以及 Prompt / 常用页面的最小高度和宽度切换策略。</li>
+            <li>调整顶部布局，搜索框移动到范围切换右侧，节省纵向空间。</li>
+            <li>补充点击/双击粘贴链路、辅助功能权限提示和调试信息，便于继续排查输入框插入问题。</li>
           </ul>
         ]]>
       </description>
-      <pubDate>Wed, 15 Apr 2026 03:00:00 +0800</pubDate>
-      <releaseNotesLink>https://github.com/izscc/iMaccy/releases/tag/2.4.0</releaseNotesLink>
+      <pubDate>Wed, 15 Apr 2026 18:20:00 +0800</pubDate>
+      <releaseNotesLink>https://github.com/izscc/iMaccy/releases/tag/2.4.1</releaseNotesLink>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <enclosure
-        url="https://github.com/izscc/iMaccy/releases/download/2.4.0/iMaccy.app.zip"
-        sparkle:version="55"
-        sparkle:shortVersionString="2.4.0"
-        sparkle:edSignature="ziKyUE+b7Wof3zzszEW/w8JXs6sLkwTIcoqwBOMyJ5Q4UKKHC63E+I0BatGoiR69iKJoGd+ykJuHhouF8bsUAw=="
-        length="3727429"
+        url="https://github.com/izscc/iMaccy/releases/download/2.4.1/iMaccy.app.zip"
+        sparkle:version="56"
+        sparkle:shortVersionString="2.4.1"
+        sparkle:edSignature="RxcU/37lHTTxLMR7pPaFIIJoYAxpxhLDfWtS2p/WyqITqHd+fATxRdfNWAykC8xXKQhNXtuHdAsxqHoxcdixDw=="
+        length="3737818"
         type="application/octet-stream"
       />
     </item>

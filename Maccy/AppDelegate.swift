@@ -94,6 +94,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
+    DebugPasteLog.reset()
+    DebugPasteLog.write("applicationDidFinishLaunching bundle=\(Bundle.main.bundleIdentifier ?? "")")
     disableUnusedGlobalHotkeys()
 
     panel = FloatingPanel(
