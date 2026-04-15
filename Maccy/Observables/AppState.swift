@@ -8,13 +8,17 @@ import SwiftData
 struct PopupWindowSizePolicy {
   let historySize: NSSize
   let promptExpandedMinWidth: CGFloat
+  let promptMinimumHeight: CGFloat
 
   func size(for scope: LibraryScope, totalContentHeight: CGFloat) -> NSSize {
     switch scope {
     case .history:
-      return NSSize(width: historySize.width, height: min(totalContentHeight, historySize.height))
+      return historySize
     case .prompt, .favorites:
-      return NSSize(width: max(historySize.width, promptExpandedMinWidth), height: historySize.height)
+      return NSSize(
+        width: max(historySize.width, promptExpandedMinWidth),
+        height: max(historySize.height, promptMinimumHeight)
+      )
     }
   }
 }
@@ -35,6 +39,7 @@ class AppState: Sendable {
   let promptFilter: PromptFilterStateStore
   let promptOrganizer: PromptOrganizer
   let promptExpandedMinWidth: CGFloat = 980
+  let promptMinimumHeight: CGFloat = 320
 
   var currentScope: LibraryScope = Defaults[.defaultLibraryScope] {
     didSet {
@@ -651,7 +656,8 @@ class AppState: Sendable {
   func targetWindowSize(forTotalHeight totalHeight: CGFloat) -> NSSize {
     PopupWindowSizePolicy(
       historySize: historyReferenceWindowSize,
-      promptExpandedMinWidth: promptExpandedMinWidth
+      promptExpandedMinWidth: promptExpandedMinWidth,
+      promptMinimumHeight: promptMinimumHeight
     )
     .size(for: currentScope, totalContentHeight: totalHeight)
   }

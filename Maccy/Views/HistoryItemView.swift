@@ -26,7 +26,7 @@ struct HistoryItemView: View {
       Text(verbatim: item.title)
     }
     .onTapGesture {
-      appState.history.select(item)
+      appState.history.selectFromPointer(item)
     }
     .contextMenu {
       if item.item.promptPlainText != nil {

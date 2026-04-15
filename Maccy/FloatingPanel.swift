@@ -66,6 +66,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 
   func open(height: CGFloat, at popupPosition: PopupPosition = Defaults[.popupPosition]) {
     let targetSize = AppState.shared.targetWindowSize(forTotalHeight: height)
+    applyMinimumSize(for: AppState.shared.currentScope)
     let targetOrigin = popupPosition.origin(size: targetSize, statusBarButton: statusBarButton)
     setFrame(NSRect(origin: targetOrigin, size: targetSize), display: true)
     orderFrontRegardless()
@@ -80,10 +81,12 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
   }
 
   func resize(to targetSize: NSSize, animate: Bool = true) {
+    applyMinimumSize(for: AppState.shared.currentScope)
     var newFrame = frame
     newFrame.origin.x -= (targetSize.width - frame.width) / 2
     newFrame.origin.y += (frame.height - targetSize.height)
     newFrame.size = targetSize
+    newFrame = clampedFrame(newFrame)
 
     if animate {
       NSAnimationContext.runAnimationGroup { context in
@@ -144,6 +147,36 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
   // Allow text inputs inside the panel can receive focus
   override var canBecomeKey: Bool {
     return true
+  }
+
+  private func applyMinimumSize(for scope: LibraryScope) {
+    switch scope {
+    case .history:
+      minSize = NSSize(width: 320, height: 240)
+    case .prompt, .favorites:
+      minSize = NSSize(
+        width: AppState.shared.promptExpandedMinWidth,
+        height: AppState.shared.promptMinimumHeight
+      )
+    }
+  }
+
+  private func clampedFrame(_ proposedFrame: NSRect) -> NSRect {
+    guard let visibleFrame = screen?.visibleFrame ?? NSScreen.forPopup?.visibleFrame else {
+      return proposedFrame
+    }
+
+    var frame = proposedFrame
+    if frame.width > visibleFrame.width {
+      frame.size.width = visibleFrame.width
+    }
+    if frame.height > visibleFrame.height {
+      frame.size.height = visibleFrame.height
+    }
+
+    frame.origin.x = min(max(frame.origin.x, visibleFrame.minX), visibleFrame.maxX - frame.width)
+    frame.origin.y = min(max(frame.origin.y, visibleFrame.minY), visibleFrame.maxY - frame.height)
+    return frame
   }
 
   var shouldRemainPresentedAfterResign: Bool {

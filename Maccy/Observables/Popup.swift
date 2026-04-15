@@ -1,4 +1,5 @@
 import AppKit.NSRunningApplication
+import AppKit.NSWorkspace
 import Defaults
 import KeyboardShortcuts
 import Observation
@@ -13,6 +14,7 @@ class Popup {
   var headerHeight: CGFloat = 0
   var pinnedItemsHeight: CGFloat = 0
   var footerHeight: CGFloat = 0
+  private var previousApplicationPID: pid_t?
 
   init() {
     KeyboardShortcuts.onKeyUp(for: .popup) {
@@ -25,6 +27,7 @@ class Popup {
   }
 
   func open(height: CGFloat, at popupPosition: PopupPosition = Defaults[.popupPosition]) {
+    rememberPreviousApplication()
     AppState.shared.currentScope = Defaults[.defaultLibraryScope]
     self.height = AppState.shared.targetWindowSize(forTotalHeight: height).height
     AppState.shared.appDelegate?.panel.open(height: height, at: popupPosition)
@@ -32,6 +35,15 @@ class Popup {
 
   func close() {
     AppState.shared.appDelegate?.panel.close()
+  }
+
+  func reactivatePreviousApplication() {
+    guard let previousApplicationPID,
+          let app = NSRunningApplication(processIdentifier: previousApplicationPID),
+          app.bundleIdentifier != Bundle.main.bundleIdentifier else {
+      return
+    }
+    app.activate(options: [.activateIgnoringOtherApps])
   }
 
   func resize(height: CGFloat) {
@@ -43,5 +55,13 @@ class Popup {
       AppState.shared.recordHistoryPresentedWindowSize(targetSize)
     }
     needsResize = false
+  }
+
+  private func rememberPreviousApplication() {
+    guard let frontmost = NSWorkspace.shared.frontmostApplication,
+          frontmost.bundleIdentifier != Bundle.main.bundleIdentifier else {
+      return
+    }
+    previousApplicationPID = frontmost.processIdentifier
   }
 }

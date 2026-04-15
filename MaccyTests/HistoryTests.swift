@@ -715,22 +715,24 @@ class PromptPhase3Tests: XCTestCase {
 }
 
 final class PopupWindowSizePolicyTests: XCTestCase {
-  func testHistoryUsesRememberedWidthAndClampedHeight() {
+  func testHistoryUsesRememberedWidthAndStoredHeight() {
     let policy = PopupWindowSizePolicy(
       historySize: NSSize(width: 480, height: 720),
-      promptExpandedMinWidth: 980
+      promptExpandedMinWidth: 980,
+      promptMinimumHeight: 320
     )
 
     let result = policy.size(for: .history, totalContentHeight: 640)
 
     XCTAssertEqual(result.width, 480)
-    XCTAssertEqual(result.height, 640)
+    XCTAssertEqual(result.height, 720)
   }
 
   func testPromptUsesHistoryHeightAndExpandedWidth() {
     let policy = PopupWindowSizePolicy(
       historySize: NSSize(width: 520, height: 760),
-      promptExpandedMinWidth: 980
+      promptExpandedMinWidth: 980,
+      promptMinimumHeight: 320
     )
 
     let prompt = policy.size(for: .prompt, totalContentHeight: 300)
@@ -745,12 +747,26 @@ final class PopupWindowSizePolicyTests: XCTestCase {
   func testPromptKeepsHistoryWidthWhenHistoryAlreadyWiderThanExpandedMinimum() {
     let policy = PopupWindowSizePolicy(
       historySize: NSSize(width: 1180, height: 760),
-      promptExpandedMinWidth: 980
+      promptExpandedMinWidth: 980,
+      promptMinimumHeight: 320
     )
 
     let result = policy.size(for: .prompt, totalContentHeight: 320)
 
     XCTAssertEqual(result.width, 1180)
     XCTAssertEqual(result.height, 760)
+  }
+
+  func testPromptUsesMinimumHeightWhenHistoryHeightTooSmall() {
+    let policy = PopupWindowSizePolicy(
+      historySize: NSSize(width: 520, height: 240),
+      promptExpandedMinWidth: 980,
+      promptMinimumHeight: 320
+    )
+
+    let result = policy.size(for: .prompt, totalContentHeight: 180)
+
+    XCTAssertEqual(result.width, 980)
+    XCTAssertEqual(result.height, 320)
   }
 }
