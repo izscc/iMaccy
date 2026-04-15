@@ -227,6 +227,7 @@ class History { // swiftlint:disable:this type_body_length
       .subtracting([.capsLock, .numericPad, .function]) ?? []
 
     if modifierFlags.isEmpty {
+      guard !Defaults[.pasteByDefault] || Accessibility.check() else { return }
       AppState.shared.popup.close()
       Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
       if Defaults[.pasteByDefault] {
@@ -238,10 +239,12 @@ class History { // swiftlint:disable:this type_body_length
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item)
       case .paste:
+        guard Accessibility.check() else { return }
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item)
         Clipboard.shared.paste()
       case .pasteWithoutFormatting:
+        guard Accessibility.check() else { return }
         AppState.shared.popup.close()
         Clipboard.shared.copy(item.item, removeFormatting: true)
         Clipboard.shared.paste()
@@ -258,12 +261,15 @@ class History { // swiftlint:disable:this type_body_length
   @MainActor
   func selectFromPointer(_ item: HistoryItemDecorator?) {
     guard let item else { return }
+    guard Accessibility.check() else { return }
 
     AppState.shared.popup.close()
     Clipboard.shared.copy(item.item, removeFormatting: Defaults[.removeFormattingByDefault])
-    Clipboard.shared.paste()
+    AppState.shared.popup.restoreFocusForPasting()
 
     Task {
+      try? await Task.sleep(for: .milliseconds(80))
+      Clipboard.shared.paste()
       searchQuery = ""
     }
   }

@@ -163,6 +163,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     UserDefaults.standard.setPersistentDomain(currentDomain, forName: currentBundleIdentifier)
     UserDefaults.standard.synchronize()
+
+    let legacyDefaults = UserDefaults(suiteName: legacyBundleIdentifier)
+    let currentDefaults = UserDefaults.standard
+    let migratedKeys = [
+      "pasteByDefault",
+      "removeFormattingByDefault",
+      "showApplicationIcons",
+      "showRecentCopyInMenuBar",
+      "menuIcon",
+      "pinTo"
+    ]
+    for key in migratedKeys where currentDefaults.object(forKey: key) == nil {
+      if let value = legacyDefaults?.object(forKey: key) {
+        currentDefaults.set(value, forKey: key)
+      }
+    }
+    currentDefaults.synchronize()
   }
 
   @objc

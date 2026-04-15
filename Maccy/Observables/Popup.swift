@@ -49,6 +49,18 @@ class Popup {
     app.activate(options: [.activateIgnoringOtherApps])
   }
 
+  func restoreFocusForPasting() {
+    if let previousApplicationPID,
+       let app = NSRunningApplication(processIdentifier: previousApplicationPID),
+       app.bundleIdentifier != Bundle.main.bundleIdentifier {
+      app.activate(options: [.activateIgnoringOtherApps])
+    }
+
+    DispatchQueue.main.async {
+      NSApp.hide(nil)
+    }
+  }
+
   func resize(height: CGFloat) {
     let chromeHeight = headerHeight + pinnedItemsHeight + footerHeight + (verticalPadding * 2)
     let targetSize = AppState.shared.targetWindowSize(forTotalHeight: height + chromeHeight)

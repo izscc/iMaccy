@@ -1,3 +1,4 @@
+import AppKit
 import Defaults
 import SwiftUI
 
@@ -84,5 +85,53 @@ struct ListItemView<Title: View>: View {
       }
     }
     .help(help ?? "")
+  }
+}
+
+struct ItemClickCapture: NSViewRepresentable {
+  let onSingleClick: (NSEvent.ModifierFlags) -> Void
+  var onDoubleClick: (() -> Void)?
+
+  func makeNSView(context: Context) -> ClickCaptureView {
+    let view = ClickCaptureView()
+    view.onSingleClick = onSingleClick
+    view.onDoubleClick = onDoubleClick
+    return view
+  }
+
+  func updateNSView(_ nsView: ClickCaptureView, context: Context) {
+    nsView.onSingleClick = onSingleClick
+    nsView.onDoubleClick = onDoubleClick
+  }
+
+  final class ClickCaptureView: NSView {
+    var onSingleClick: ((NSEvent.ModifierFlags) -> Void)?
+    var onDoubleClick: (() -> Void)?
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+      true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+      guard let event = NSApp.currentEvent else {
+        return self
+      }
+
+      switch event.type {
+      case .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp:
+        return nil
+      default:
+        return self
+      }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+      let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      if event.clickCount >= 2 {
+        onDoubleClick?()
+      } else {
+        onSingleClick?(modifiers)
+      }
+    }
   }
 }
