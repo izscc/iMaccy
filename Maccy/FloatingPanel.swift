@@ -180,10 +180,6 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
   }
 
   var shouldRemainPresentedAfterResign: Bool {
-    if NSApp.isActive {
-      return true
-    }
-
     if attachedSheet != nil || NSApp.modalWindow != nil || NSApp.alertWindow != nil {
       return true
     }

@@ -3,18 +3,10 @@ import Cocoa
 class About {
   private let repositoryURL = URL(string: "https://github.com/izscc/iMaccy")!
   private let issuesURL = URL(string: "https://github.com/izscc/iMaccy/issues")!
-
-  private let familyCredits = NSAttributedString(
-    string: "Special thank you to Tonia, Anna & Guy! ❤️",
+  private let projectDescription = NSAttributedString(
+    string: "iMaccy 是一个基于 Maccy 演进的 macOS 剪贴板工作台，重点强化 Prompt 的沉淀、组织与复用。",
     attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor]
   )
-
-  private var kossCredits: NSMutableAttributedString {
-    let string = NSMutableAttributedString(string: "Kudos to Sasha Koss for help! 🏂",
-                                           attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor])
-    string.addAttribute(.link, value: "https://koss.nocorp.me", range: NSRange(location: 9, length: 10))
-    return string
-  }
 
   private var links: NSMutableAttributedString {
     let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.labelColor]
@@ -37,11 +29,9 @@ class About {
   private var credits: NSMutableAttributedString {
     let credits = NSMutableAttributedString(string: "",
                                             attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor])
-    credits.append(links)
+    credits.append(projectDescription)
     credits.append(NSAttributedString(string: "\n\n"))
-    credits.append(kossCredits)
-    credits.append(NSAttributedString(string: "\n"))
-    credits.append(familyCredits)
+    credits.append(links)
     credits.setAlignment(.center, range: NSRange(location: 0, length: credits.length))
     return credits
   }
