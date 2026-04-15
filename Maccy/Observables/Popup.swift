@@ -23,6 +23,9 @@ class Popup {
   }
 
   func toggle(at popupPosition: PopupPosition = Defaults[.popupPosition]) {
+    if AppState.shared.appDelegate?.panel?.isPresented != true {
+      rememberPreviousApplication()
+    }
     AppState.shared.appDelegate?.panel.toggle(height: height, at: popupPosition)
   }
 
@@ -57,7 +60,7 @@ class Popup {
     needsResize = false
   }
 
-  private func rememberPreviousApplication() {
+  func rememberPreviousApplication() {
     guard let frontmost = NSWorkspace.shared.frontmostApplication,
           frontmost.bundleIdentifier != Bundle.main.bundleIdentifier else {
       return

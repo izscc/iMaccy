@@ -240,6 +240,21 @@ class AppState: Sendable {
     activeSearchQuery = ""
   }
 
+  func selectPromptFromPointer(_ item: PromptItem?) {
+    guard let item else { return }
+
+    promptLibrary.markUsed(item)
+    popup.close()
+    Clipboard.shared.copy(item.plainText)
+    popup.reactivatePreviousApplication()
+
+    Task {
+      try? await Task.sleep(for: .milliseconds(80))
+      Clipboard.shared.paste()
+      activeSearchQuery = ""
+    }
+  }
+
   func selectPromptListItem(_ item: PromptItem?) {
     guard let item else {
       selectedPromptIDs.removeAll()
