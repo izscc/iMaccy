@@ -1,3 +1,4 @@
+import AppKit
 import Defaults
 import SwiftUI
 
@@ -569,23 +570,20 @@ private struct PromptRowView: View {
       }
     }
     .contentShape(.rect)
-    .gesture(
-      TapGesture(count: 2)
-        .exclusively(before: TapGesture())
-        .onEnded { value in
-          switch value {
-          case .first:
-            onActivate()
-          case .second:
-            let modifiers = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            if modifiers.contains(.command) {
-              onToggleMultiSelection()
-            } else {
-              onSelect()
-            }
+    .overlay {
+      PromptRowClickCapture(
+        onSingleClick: { modifiers in
+          if modifiers.contains(.command) {
+            onToggleMultiSelection()
+          } else {
+            onSelect()
           }
+        },
+        onDoubleClick: {
+          onActivate()
         }
-    )
+      )
+    }
     .contextMenu {
       Button(item.isFavorite ? "取消收藏" : "收藏") {
         onToggleFavorite()
@@ -1025,6 +1023,54 @@ private struct PromptTagAssignmentSheet: View {
     .frame(width: 360)
     .task {
       selectedTagIDs = Set(appState.promptTags(for: promptItem).map(\.id))
+    }
+  }
+}
+
+private struct PromptRowClickCapture: NSViewRepresentable {
+  let onSingleClick: (NSEvent.ModifierFlags) -> Void
+  let onDoubleClick: () -> Void
+
+  func makeNSView(context: Context) -> ClickCaptureView {
+    let view = ClickCaptureView()
+    view.onSingleClick = onSingleClick
+    view.onDoubleClick = onDoubleClick
+    return view
+  }
+
+  func updateNSView(_ nsView: ClickCaptureView, context: Context) {
+    nsView.onSingleClick = onSingleClick
+    nsView.onDoubleClick = onDoubleClick
+  }
+
+  final class ClickCaptureView: NSView {
+    var onSingleClick: ((NSEvent.ModifierFlags) -> Void)?
+    var onDoubleClick: (() -> Void)?
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+      true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+      guard let event = NSApp.currentEvent else {
+        return self
+      }
+
+      switch event.type {
+      case .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp:
+        return nil
+      default:
+        return self
+      }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+      let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      if event.clickCount >= 2 {
+        onDoubleClick?()
+      } else {
+        onSingleClick?(modifiers)
+      }
     }
   }
 }
