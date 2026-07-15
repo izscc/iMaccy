@@ -30,13 +30,33 @@ jobs:
             -scheme iMaccy \
             -resolvePackageDependencies
 
-      - name: Run unit tests
+      - name: Run item action tests
+        run: |
+          xcodebuild test \
+            -project iMaccy.xcodeproj \
+            -scheme iMaccy \
+            -destination 'platform=macOS' \
+            -only-testing:iMaccyTests/ItemActionCoordinatorTests \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run History tests
+        run: |
+          xcodebuild test \
+            -project iMaccy.xcodeproj \
+            -scheme iMaccy \
+            -destination 'platform=macOS' \
+            -only-testing:iMaccyTests/HistoryTests \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run remaining unit tests
         run: |
           xcodebuild test \
             -project iMaccy.xcodeproj \
             -scheme iMaccy \
             -destination 'platform=macOS' \
             -only-testing:iMaccyTests \
+            -skip-testing:iMaccyTests/HistoryTests \
+            -skip-testing:iMaccyTests/ItemActionCoordinatorTests \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build Distribution app
