@@ -97,8 +97,8 @@ class PromptCategoryStore {
   @ObservationIgnored
   let context: ModelContext
 
-  init(context: ModelContext = Storage.shared.context) {
-    self.context = context
+  init(context: ModelContext? = nil) {
+    self.context = context ?? Storage.shared.context
   }
 
   var bookmarkCategories: [PromptCategory] {
@@ -290,8 +290,8 @@ class PromptTagStore {
   @ObservationIgnored
   let context: ModelContext
 
-  init(context: ModelContext = Storage.shared.context) {
-    self.context = context
+  init(context: ModelContext? = nil) {
+    self.context = context ?? Storage.shared.context
   }
 
   func load() {
@@ -459,8 +459,8 @@ class PromptLibrary {
   @ObservationIgnored
   let context: ModelContext
 
-  init(context: ModelContext = Storage.shared.context) {
-    self.context = context
+  init(context: ModelContext? = nil) {
+    self.context = context ?? Storage.shared.context
   }
 
   func load() {
