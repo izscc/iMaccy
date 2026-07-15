@@ -48,15 +48,22 @@ jobs:
             -only-testing:iMaccyTests/HistoryTests \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Run remaining unit tests
+      - name: Run Prompt and regression tests
         run: |
           xcodebuild test \
             -project iMaccy.xcodeproj \
             -scheme iMaccy \
             -destination 'platform=macOS' \
-            -only-testing:iMaccyTests \
-            -skip-testing:iMaccyTests/HistoryTests \
-            -skip-testing:iMaccyTests/ItemActionCoordinatorTests \
+            -only-testing:iMaccyTests/WindowDismissalPolicyTests \
+            -only-testing:iMaccyTests/PanelDismissalCoordinatorTests \
+            -only-testing:iMaccyTests/PromptIntegrityTests \
+            -only-testing:iMaccyTests/PromptSearchParserTests \
+            -only-testing:iMaccyTests/PromptSnapshotTests \
+            -only-testing:iMaccyTests/PromptEditorTests \
+            -only-testing:iMaccyTests/PromptSelectionTests \
+            -only-testing:iMaccyTests/PerformanceTests \
+            -only-testing:iMaccyTests/StorageTests \
+            -only-testing:iMaccyTests/ThrottlerTests \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Build Distribution app
