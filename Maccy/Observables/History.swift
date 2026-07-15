@@ -76,27 +76,31 @@ class History { // swiftlint:disable:this type_body_length
   var all: [HistoryItemDecorator] = []
 
   init() {
-    Task {
+    Task { [weak self] in
       for await _ in Defaults.updates(.pasteByDefault, initial: false) {
-        updateShortcuts()
+        guard let self else { return }
+        self.updateShortcuts()
       }
     }
 
-    Task {
+    Task { [weak self] in
       for await _ in Defaults.updates(.sortBy, initial: false) {
-        try? await load()
+        guard let self else { return }
+        try? await self.load()
       }
     }
 
-    Task {
+    Task { [weak self] in
       for await _ in Defaults.updates(.pinTo, initial: false) {
-        try? await load()
+        guard let self else { return }
+        try? await self.load()
       }
     }
 
-    Task {
+    Task { [weak self] in
       for await _ in Defaults.updates(.showSpecialSymbols, initial: false) {
-        items.forEach { item in
+        guard let self else { return }
+        self.items.forEach { item in
           let title = item.item.generateTitle()
           item.title = title
           item.item.title = title
@@ -104,9 +108,10 @@ class History { // swiftlint:disable:this type_body_length
       }
     }
 
-    Task {
+    Task { [weak self] in
       for await _ in Defaults.updates(.imageMaxHeight, initial: false) {
-        for item in items {
+        guard let self else { return }
+        for item in self.items {
           await item.sizeImages()
         }
       }
