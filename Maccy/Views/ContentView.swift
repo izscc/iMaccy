@@ -46,8 +46,8 @@ struct ContentView: View {
           }
         }
       }
-      .animation(.default.speed(3), value: appState.history.items)
-      .animation(.default.speed(3), value: appState.visiblePromptItems.map(\.id))
+      .animation(.default.speed(3), value: appState.history.listRevision)
+      .animation(.default.speed(3), value: appState.promptListRevision)
       .animation(.easeInOut(duration: 0.2), value: appState.searchVisible)
       .padding(.horizontal, 5)
       .padding(.vertical, appState.popup.verticalPadding)
@@ -58,34 +58,23 @@ struct ContentView: View {
         appState.isKeyboardNavigating = false
       }
       .task {
-        try? await appState.history.load()
-        appState.bootstrapPromptLibrary()
+        if appState.currentScope != .history {
+          appState.ensurePromptLibraryLoaded()
+        }
       }
     }
     .environment(appState)
     .environment(modifierFlags)
     .environment(\.scenePhase, scenePhase)
     // FloatingPanel is not a scene, so let's implement custom scenePhase..
-    .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) {
-      if let window = $0.object as? NSWindow,
-         let bundleIdentifier = Bundle.main.bundleIdentifier,
-         window.identifier == NSUserInterfaceItemIdentifier(bundleIdentifier) {
+    .onReceive(NotificationCenter.default.publisher(for: .panelLifecyclePhaseDidChange)) {
+      switch $0.panelLifecyclePhase {
+      case .active:
         scenePhase = .active
-      }
-    }
-    .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) {
-      if let window = $0.object as? NSWindow,
-         let bundleIdentifier = Bundle.main.bundleIdentifier,
-         window.identifier == NSUserInterfaceItemIdentifier(bundleIdentifier) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-          if let panel = appState.appDelegate?.panel,
-             panel.isPresented,
-             panel.shouldRemainPresentedAfterResign {
-            scenePhase = .active
-          } else {
-            scenePhase = .background
-          }
-        }
+      case .background:
+        scenePhase = .background
+      case nil:
+        break
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: NSPopover.willShowNotification)) {
@@ -96,6 +85,14 @@ struct ContentView: View {
         // Prevent NSPopover from becoming first responder.
         popover.behavior = .semitransient
       }
+    }
+    .alert("操作失败", isPresented: Binding(
+      get: { appState.promptErrorMessage != nil },
+      set: { if !$0 { appState.clearPromptError() } }
+    )) {
+      Button("确定", role: .cancel) {}
+    } message: {
+      Text(appState.promptErrorMessage ?? "")
     }
   }
 }

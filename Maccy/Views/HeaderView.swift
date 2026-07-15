@@ -30,6 +30,7 @@ struct HeaderView: View {
       .labelsHidden()
       .pickerStyle(.segmented)
       .fixedSize(horizontal: true, vertical: false)
+      .accessibilityIdentifier("library-scope-picker")
 
       SearchFieldView(placeholder: "search_placeholder", query: $searchQuery)
         .focused($searchFocused)

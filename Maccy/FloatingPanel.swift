@@ -1,4 +1,5 @@
 import Defaults
+import OSLog
 import SwiftUI
 
 // An NSPanel subclass that implements floating panel traits.
@@ -6,6 +7,24 @@ import SwiftUI
 class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
   var isPresented: Bool = false
   var statusBarButton: NSStatusBarButton?
+  private var hasRecordedFirstOpen = false
+  private var firstPopupInterval: OSSignpostIntervalState?
+
+  private lazy var dismissalCoordinator = PanelDismissalCoordinator(
+    contextProvider: { [weak self] in
+      self?.windowDismissalContext ?? WindowDismissalContext(isPresented: false, isKeyWindow: false)
+    },
+    dismiss: { [weak self] in
+      self?.close()
+    },
+    phaseDidChange: { phase in
+      NotificationCenter.default.post(
+        name: .panelLifecyclePhaseDidChange,
+        object: nil,
+        userInfo: [PanelLifecyclePhase.notificationUserInfoKey: phase]
+      )
+    }
+  )
 
   override var isMovable: Bool {
     get { Defaults[.popupPosition] != .statusItem }
@@ -65,13 +84,17 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
   }
 
   func open(height: CGFloat, at popupPosition: PopupPosition = Defaults[.popupPosition]) {
+    if !hasRecordedFirstOpen {
+      firstPopupInterval = Diagnostics.begin(Diagnostics.Name.firstPopup)
+      hasRecordedFirstOpen = true
+    }
     let targetSize = AppState.shared.targetWindowSize(forTotalHeight: height)
     applyMinimumSize(for: AppState.shared.currentScope)
     let targetOrigin = popupPosition.origin(size: targetSize, statusBarButton: statusBarButton)
     setFrame(NSRect(origin: targetOrigin, size: targetSize), display: true)
+    isPresented = true
     orderFrontRegardless()
     makeKey()
-    isPresented = true
 
     if popupPosition == .statusItem {
       DispatchQueue.main.async {
@@ -125,23 +148,32 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
     return frameSize
   }
 
-  // Close automatically when out of focus, e.g. outside click.
-  override func resignKey() {
-    super.resignKey()
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-      guard self.isPresented else { return }
-      guard !self.shouldRemainPresentedAfterResign else { return }
-      self.close()
+  func windowDidBecomeKey(_ notification: Notification) {
+    AppState.shared.itemActionCoordinator.cancelPendingPaste()
+    if let firstPopupInterval {
+      Diagnostics.end(Diagnostics.Name.firstPopup, firstPopupInterval)
+      self.firstPopupInterval = nil
     }
+    dismissalCoordinator.panelDidBecomeKey()
+  }
+
+  // Close automatically when out of focus, e.g. outside click.
+  func windowDidResignKey(_ notification: Notification) {
+    dismissalCoordinator.panelDidResignKey()
   }
 
   override func close() {
+    if let firstPopupInterval {
+      Diagnostics.end(Diagnostics.Name.firstPopup, firstPopupInterval)
+      self.firstPopupInterval = nil
+    }
     if AppState.shared.currentScope == .history {
       AppState.shared.recordHistoryPresentedWindowSize(frame.size)
     }
     super.close()
     isPresented = false
     statusBarButton?.isHighlighted = false
+    dismissalCoordinator.panelDidClose()
   }
 
   // Allow text inputs inside the panel can receive focus
@@ -179,19 +211,28 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
     return frame
   }
 
-  var shouldRemainPresentedAfterResign: Bool {
-    if attachedSheet != nil || NSApp.modalWindow != nil || NSApp.alertWindow != nil {
-      return true
+  private var windowDismissalContext: WindowDismissalContext {
+    let visibleOwnedWindows = NSApp.windows.filter { window in
+      window !== self && window.isVisible && owns(window)
     }
+    let hasVisibleUnrelatedAlert = NSApp.alertWindow.map { alert in
+      alert.isVisible && !owns(alert)
+    } ?? false
 
-    if (childWindows ?? []).contains(where: \.isVisible) {
-      return true
-    }
+    return WindowDismissalContext(
+      isPresented: isPresented,
+      isKeyWindow: isKeyWindow,
+      hasAttachedSheet: attachedSheet != nil || visibleOwnedWindows.contains(where: { $0.sheetParent === self }),
+      hasVisibleOwnedChildWindow: visibleOwnedWindows.contains(where: { $0.sheetParent == nil }) ||
+        (childWindows ?? []).contains(where: \.isVisible),
+      hasVisibleCharacterPicker: NSApp.characterPickerWindow?.isVisible == true,
+      hasVisibleUnrelatedAlert: hasVisibleUnrelatedAlert
+    )
+  }
 
-    return NSApp.windows.contains(where: { window in
-      window != self &&
-      window.isVisible &&
-      (window.sheetParent == self || window.parent == self)
-    })
+  private func owns(_ window: NSWindow) -> Bool {
+    window.sheetParent === self ||
+      window.parent === self ||
+      (childWindows ?? []).contains(where: { $0 === window })
   }
 }

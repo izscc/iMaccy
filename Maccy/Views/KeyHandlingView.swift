@@ -11,6 +11,10 @@ struct KeyHandlingView<Content: View>: View {
   var body: some View {
     content()
       .onKeyPress { _ in
+        if appState.appDelegate?.panel?.attachedSheet != nil {
+          return .ignored
+        }
+
         // Unfortunately, key presses don't allow access to
         // key code and don't properly work with multiple inputs,
         // so pressing ⌘, on non-English layout doesn't open
@@ -83,7 +87,12 @@ struct KeyHandlingView<Content: View>: View {
             return .ignored
           }
 
-          appState.highlightNext()
+          if appState.currentScope != .history,
+             NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
+            appState.extendPromptSelection(by: 1)
+          } else {
+            appState.highlightNext()
+          }
           return .handled
         case .moveToLast:
           guard NSApp.characterPickerWindow == nil else {
@@ -97,7 +106,12 @@ struct KeyHandlingView<Content: View>: View {
             return .ignored
           }
 
-          appState.highlightPrevious()
+          if appState.currentScope != .history,
+             NSApp.currentEvent?.modifierFlags.contains(.shift) == true {
+            appState.extendPromptSelection(by: -1)
+          } else {
+            appState.highlightPrevious()
+          }
           return .handled
         case .moveToFirst:
           guard NSApp.characterPickerWindow == nil else {
@@ -115,11 +129,33 @@ struct KeyHandlingView<Content: View>: View {
           }
           appState.history.togglePin(appState.history.selectedItem)
           return .handled
+        case .selectAll:
+          guard appState.currentScope != .history,
+                !searchFocused,
+                !isTextInputActive else { return .ignored }
+          appState.selectAllVisiblePrompts()
+          return .handled
+        case .undo:
+          guard appState.currentScope != .history,
+                !searchFocused,
+                !isTextInputActive else { return .ignored }
+          appState.undoPromptAction()
+          return .handled
+        case .redo:
+          guard appState.currentScope != .history,
+                !searchFocused,
+                !isTextInputActive else { return .ignored }
+          appState.redoPromptAction()
+          return .handled
         case .selectCurrentItem:
           appState.select()
           return .handled
         case .close:
-          appState.popup.close()
+          if appState.currentScope != .history, !appState.selectedPromptIDs.isEmpty {
+            appState.clearPromptSelection()
+          } else {
+            appState.popup.close()
+          }
           return .handled
         default:
           ()
@@ -137,5 +173,9 @@ struct KeyHandlingView<Content: View>: View {
 
         return .ignored
       }
+  }
+
+  private var isTextInputActive: Bool {
+    NSApp.keyWindow?.firstResponder is NSTextView
   }
 }

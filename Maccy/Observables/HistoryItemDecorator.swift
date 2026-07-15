@@ -76,9 +76,6 @@ class HistoryItemDecorator: Identifiable, Hashable {
 
     synchronizeItemPin()
     synchronizeItemTitle()
-    Task {
-      await sizeImages()
-    }
   }
 
   @MainActor

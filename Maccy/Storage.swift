@@ -12,11 +12,14 @@ class Storage {
   var container: ModelContainer
   var context: ModelContext { container.mainContext }
   var size: String {
-    guard let size = try? Data(contentsOf: url), size.count > 1 else {
+    let size = [url, url.appendingPathExtension("wal"), url.appendingPathExtension("shm")]
+      .compactMap(Self.fileSize)
+      .reduce(0, +)
+    guard size > 1 else {
       return ""
     }
 
-    return ByteCountFormatter().string(fromByteCount: Int64(size.count))
+    return ByteCountFormatter().string(fromByteCount: size)
   }
 
   private let url = Storage.prepareStorageURL()
@@ -43,6 +46,15 @@ class Storage {
     } catch let error {
       fatalError("Cannot load database: \(error.localizedDescription).")
     }
+  }
+
+  static func fileSize(at url: URL) -> Int64? {
+    guard let values = try? url.resourceValues(forKeys: [.fileSizeKey]),
+          let fileSize = values.fileSize else {
+      return nil
+    }
+
+    return Int64(fileSize)
   }
 
   private static func prepareStorageURL() -> URL {

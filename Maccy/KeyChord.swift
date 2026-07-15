@@ -30,7 +30,10 @@ enum KeyChord: CaseIterable {
   case moveToFirst
   case openPreferences
   case pinOrUnpin
+  case selectAll
   case selectCurrentItem
+  case undo
+  case redo
   case close
   case unknown
 
@@ -97,6 +100,12 @@ enum KeyChord: CaseIterable {
       self = .pinOrUnpin
     case (.comma, [.command]):
       self = .openPreferences
+    case (.a, [.command]):
+      self = .selectAll
+    case (.z, [.command]):
+      self = .undo
+    case (.z, [.command, .shift]):
+      self = .redo
     case (.return, _),
          (.keypadEnter, _):
       self = .selectCurrentItem

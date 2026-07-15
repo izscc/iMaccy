@@ -7,11 +7,31 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D10000012F04000000000002 /* ItemActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000001 /* ItemActivation.swift */; };
+		D10000012F04000000000004 /* PromptIntegrityRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000003 /* PromptIntegrityRepair.swift */; };
+		D10000012F04000000000006 /* PromptSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000005 /* PromptSelection.swift */; };
+		D10000012F04000000000012 /* PromptIntegrityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000011 /* PromptIntegrityTests.swift */; };
+		D10000012F04000000000014 /* PromptEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000013 /* PromptEditorTests.swift */; };
+		D10000012F04000000000016 /* ItemActionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000015 /* ItemActionCoordinatorTests.swift */; };
+		D10000012F04000000000018 /* PromptSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F04000000000017 /* PromptSelectionTests.swift */; };
+		B10000012F01000000000002 /* WindowDismissalPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012F01000000000001 /* WindowDismissalPolicy.swift */; };
+		B10000012F01000000000004 /* WindowDismissalPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012F01000000000003 /* WindowDismissalPolicyTests.swift */; };
 		E10000012EE4000000000011 /* PromptModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000012EE4000000000001 /* PromptModels.swift */; };
+		C10000012F02000000000002 /* PromptSearchParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012F02000000000001 /* PromptSearchParser.swift */; };
+		C10000012F02000000000004 /* PromptSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012F02000000000003 /* PromptSnapshot.swift */; };
+		C20000012F03000000000002 /* PromptSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000012F03000000000001 /* PromptSidebarView.swift */; };
+		C20000012F03000000000004 /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000012F03000000000003 /* PromptListView.swift */; };
+		C20000012F03000000000006 /* PromptInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000012F03000000000005 /* PromptInspectorView.swift */; };
+		C20000012F03000000000008 /* PromptSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000012F03000000000007 /* PromptSheets.swift */; };
+		C20000012F0300000000000A /* PromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000012F03000000000009 /* PromptEditorView.swift */; };
 		E10000012EE4000000000012 /* PromptStores.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000012EE4000000000002 /* PromptStores.swift */; };
 		E10000012EE4000000000013 /* PromptWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000012EE4000000000003 /* PromptWorkspaceView.swift */; };
 		E10000012EE4000000000014 /* PromptSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000012EE4000000000004 /* PromptSettingsPane.swift */; };
 		F20000012EE5000000000001 /* DebugPasteLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000012EE5000000000002 /* DebugPasteLog.swift */; };
+		FA1000012F00000000000001 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1000012F00000000000011 /* Diagnostics.swift */; };
+		FA1000012F00000000000002 /* ThrottlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1000012F00000000000012 /* ThrottlerTests.swift */; };
+		FA1000012F00000000000003 /* StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1000012F00000000000013 /* StorageTests.swift */; };
+		FA1000012F00000000000004 /* PerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1000012F00000000000014 /* PerformanceTests.swift */; };
 		0ABDD5122BB47F1E0054963B /* NSWorkspace+ApplicationName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ABDD5112BB47F1E0054963B /* NSWorkspace+ApplicationName.swift */; };
 		2F1A79C02C6DFB7800C98EBD /* SearchVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1A79BF2C6DFB7800C98EBD /* SearchVisibility.swift */; };
 		2F39CB042AD9A93C00B749FD /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 2F39CB032AD9A93C00B749FD /* Sparkle */; };
@@ -58,6 +78,8 @@
 		DA243D122C2F64830012A27F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA243D112C2F64820012A27F /* ContentView.swift */; };
 		DA243D142C2F66DD0012A27F /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA243D132C2F66DD0012A27F /* Storage.swift */; };
 		DA360DB31E3DF137005C6F6B /* HistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA360DB21E3DF137005C6F6B /* HistoryTests.swift */; };
+		C10000012F02000000000006 /* PromptSearchParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012F02000000000005 /* PromptSearchParserTests.swift */; };
+		C10000012F02000000000008 /* PromptSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012F02000000000007 /* PromptSnapshotTests.swift */; };
 		DA384E86232746D800603999 /* SearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA384E85232746D800603999 /* SearchTests.swift */; };
 		DA3BCB8E2C3E015000B01BC1 /* ModifierFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3BCB8D2C3E015000B01BC1 /* ModifierFlags.swift */; };
 		DA3BCB922C3EEC3C00B01BC1 /* History.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3BCB912C3EEC3C00B01BC1 /* History.swift */; };
@@ -163,6 +185,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D10000012F04000000000001 /* ItemActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemActivation.swift; sourceTree = "<group>"; };
+		D10000012F04000000000003 /* PromptIntegrityRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptIntegrityRepair.swift; sourceTree = "<group>"; };
+		D10000012F04000000000005 /* PromptSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSelection.swift; sourceTree = "<group>"; };
+		D10000012F04000000000011 /* PromptIntegrityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptIntegrityTests.swift; sourceTree = "<group>"; };
+		D10000012F04000000000013 /* PromptEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEditorTests.swift; sourceTree = "<group>"; };
+		D10000012F04000000000015 /* ItemActionCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemActionCoordinatorTests.swift; sourceTree = "<group>"; };
+		D10000012F04000000000017 /* PromptSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSelectionTests.swift; sourceTree = "<group>"; };
+		B10000012F01000000000001 /* WindowDismissalPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDismissalPolicy.swift; sourceTree = "<group>"; };
+		B10000012F01000000000003 /* WindowDismissalPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDismissalPolicyTests.swift; sourceTree = "<group>"; };
 		088F4DA628BECBC40003AD19 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		0ABDD5112BB47F1E0054963B /* NSWorkspace+ApplicationName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWorkspace+ApplicationName.swift"; sourceTree = "<group>"; };
 		1180C7372826B6140086870C /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -171,6 +202,13 @@
 		2F8B9DE52C5D6E5D0046EF69 /* NSPoint+DefaultsSerializable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSPoint+DefaultsSerializable.swift"; sourceTree = "<group>"; };
 		2FB5BC9F2CD8F73C008B33F4 /* ApplicationImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationImage.swift; sourceTree = "<group>"; };
 		E10000012EE4000000000001 /* PromptModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptModels.swift; sourceTree = "<group>"; };
+		C10000012F02000000000001 /* PromptSearchParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSearchParser.swift; sourceTree = "<group>"; };
+		C10000012F02000000000003 /* PromptSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSnapshot.swift; sourceTree = "<group>"; };
+		C20000012F03000000000001 /* PromptSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSidebarView.swift; sourceTree = "<group>"; };
+		C20000012F03000000000003 /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
+		C20000012F03000000000005 /* PromptInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptInspectorView.swift; sourceTree = "<group>"; };
+		C20000012F03000000000007 /* PromptSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSheets.swift; sourceTree = "<group>"; };
+		C20000012F03000000000009 /* PromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEditorView.swift; sourceTree = "<group>"; };
 		E10000012EE4000000000002 /* PromptStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptStores.swift; sourceTree = "<group>"; };
 		E10000012EE4000000000003 /* PromptWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptWorkspaceView.swift; sourceTree = "<group>"; };
 		E10000012EE4000000000004 /* PromptSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSettingsPane.swift; sourceTree = "<group>"; };
@@ -185,6 +223,10 @@
 		DA00992F256411F90030E697 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		DA05B5102C234CB1006980FE /* MaccyApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MaccyApp.swift; sourceTree = "<group>"; };
 		F20000012EE5000000000002 /* DebugPasteLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPasteLog.swift; sourceTree = "<group>"; };
+		FA1000012F00000000000011 /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
+		FA1000012F00000000000012 /* ThrottlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrottlerTests.swift; sourceTree = "<group>"; };
+		FA1000012F00000000000013 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
+		FA1000012F00000000000014 /* PerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTests.swift; sourceTree = "<group>"; };
 		DA05B5122C234DCF006980FE /* HistoryItemContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryItemContent.swift; sourceTree = "<group>"; };
 		DA05B5132C234DCF006980FE /* HistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryItem.swift; sourceTree = "<group>"; };
 		DA083A6D2C42E8E8004259A0 /* NSImage+Resized.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+Resized.swift"; sourceTree = "<group>"; };
@@ -228,6 +270,8 @@
 		DA2F1B0926F22DF4005D30BA /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		DA360DB01E3DF137005C6F6B /* MaccyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iMaccyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA360DB21E3DF137005C6F6B /* HistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = HistoryTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		C10000012F02000000000005 /* PromptSearchParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSearchParserTests.swift; sourceTree = "<group>"; };
+		C10000012F02000000000007 /* PromptSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSnapshotTests.swift; sourceTree = "<group>"; };
 		DA360DB41E3DF137005C6F6B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DA384E85232746D800603999 /* SearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchTests.swift; sourceTree = "<group>"; };
 		DA3873FA2D09EB7600E7B251 /* be */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = be; path = be.lproj/AdvancedSettings.strings; sourceTree = "<group>"; };
@@ -579,6 +623,7 @@
 				DA05B5132C234DCF006980FE /* HistoryItem.swift */,
 				DA05B5122C234DCF006980FE /* HistoryItemContent.swift */,
 				E10000012EE4000000000001 /* PromptModels.swift */,
+				C10000012F02000000000003 /* PromptSnapshot.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -630,6 +675,11 @@
 				DA5E627E2C39E53F00F4C710 /* PreviewItemView.strings */,
 				DA1969132C3F11D600258481 /* PreviewItemView.swift */,
 				E10000012EE4000000000003 /* PromptWorkspaceView.swift */,
+				C20000012F03000000000001 /* PromptSidebarView.swift */,
+				C20000012F03000000000003 /* PromptListView.swift */,
+				C20000012F03000000000005 /* PromptInspectorView.swift */,
+				C20000012F03000000000007 /* PromptSheets.swift */,
+				C20000012F03000000000009 /* PromptEditorView.swift */,
 				DA1969172C3F327500258481 /* SearchFieldView.swift */,
 				DAA072D02C4089D3006DDFD2 /* VisualEffectView.swift */,
 				DA555F112CF155A2009608BD /* WrappingTextView.swift */,
@@ -650,13 +700,23 @@
 			isa = PBXGroup;
 			children = (
 				DA48AE852A5F0077006D4894 /* Fixtures */,
+				D10000012F04000000000015 /* ItemActionCoordinatorTests.swift */,
+				D10000012F04000000000013 /* PromptEditorTests.swift */,
+				D10000012F04000000000011 /* PromptIntegrityTests.swift */,
+				D10000012F04000000000017 /* PromptSelectionTests.swift */,
+				B10000012F01000000000003 /* WindowDismissalPolicyTests.swift */,
 				DA3CE7FF1E44A62500B3AA98 /* ClipboardTests.swift */,
 				DAE2850123225BD90080E394 /* ColorImageTests.swift */,
 				DA360DB21E3DF137005C6F6B /* HistoryTests.swift */,
+				FA1000012F00000000000014 /* PerformanceTests.swift */,
+				C10000012F02000000000005 /* PromptSearchParserTests.swift */,
+				C10000012F02000000000007 /* PromptSnapshotTests.swift */,
 				DA1EDE422045B35300479723 /* HistoryDecoratorTests.swift */,
 				DAFE2DE8268A9B1B00990986 /* HistoryItemTests.swift */,
 				DA384E85232746D800603999 /* SearchTests.swift */,
 				DA696BD12401EEE900DE80CF /* SorterTests.swift */,
+				FA1000012F00000000000013 /* StorageTests.swift */,
+				FA1000012F00000000000012 /* ThrottlerTests.swift */,
 				DA360DB41E3DF137005C6F6B /* Info.plist */,
 			);
 			path = MaccyTests;
@@ -752,6 +812,8 @@
 				DA0EF1871E444B2A00E58577 /* Clipboard.swift */,
 				DAE284FF232257D20080E394 /* ColorImage.swift */,
 				DAA54BF92C3C951900B7FDD8 /* FloatingPanel.swift */,
+				B10000012F01000000000001 /* WindowDismissalPolicy.swift */,
+				C10000012F02000000000001 /* PromptSearchParser.swift */,
 				DA689FC92C1D18890009B887 /* HighlightMatch.swift */,
 				DA1969202C3F6C6800258481 /* HistoryItemAction.swift */,
 				DABDE97E2974706C005B32E9 /* KeyboardLayout.swift */,
@@ -759,6 +821,10 @@
 				DA19690F2C3F0AAC00258481 /* KeyShortcut.swift */,
 				DA05B5102C234CB1006980FE /* MaccyApp.swift */,
 				F20000012EE5000000000002 /* DebugPasteLog.swift */,
+				FA1000012F00000000000011 /* Diagnostics.swift */,
+				D10000012F04000000000001 /* ItemActivation.swift */,
+				D10000012F04000000000003 /* PromptIntegrityRepair.swift */,
+				D10000012F04000000000005 /* PromptSelection.swift */,
 				DA689FCB2C1D1D510009B887 /* MenuIcon.swift */,
 				DA20FA712B082DD600056DD5 /* Notifier.swift */,
 				DA689FC72C1D15140009B887 /* PinsPosition.swift */,
@@ -983,6 +1049,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000012F01000000000004 /* WindowDismissalPolicyTests.swift in Sources */,
+				D10000012F04000000000016 /* ItemActionCoordinatorTests.swift in Sources */,
+				D10000012F04000000000014 /* PromptEditorTests.swift in Sources */,
+				D10000012F04000000000012 /* PromptIntegrityTests.swift in Sources */,
+				D10000012F04000000000018 /* PromptSelectionTests.swift in Sources */,
 				DAFE2DE9268A9B1B00990986 /* HistoryItemTests.swift in Sources */,
 				DA3CE8001E44A62500B3AA98 /* ClipboardTests.swift in Sources */,
 				DA1EDE432045B35300479723 /* HistoryDecoratorTests.swift in Sources */,
@@ -990,6 +1061,11 @@
 				DA384E86232746D800603999 /* SearchTests.swift in Sources */,
 				DA696BD22401EEE900DE80CF /* SorterTests.swift in Sources */,
 				DA360DB31E3DF137005C6F6B /* HistoryTests.swift in Sources */,
+				FA1000012F00000000000004 /* PerformanceTests.swift in Sources */,
+				FA1000012F00000000000003 /* StorageTests.swift in Sources */,
+				FA1000012F00000000000002 /* ThrottlerTests.swift in Sources */,
+				C10000012F02000000000006 /* PromptSearchParserTests.swift in Sources */,
+				C10000012F02000000000008 /* PromptSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -997,12 +1073,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000012F01000000000002 /* WindowDismissalPolicy.swift in Sources */,
+				D10000012F04000000000002 /* ItemActivation.swift in Sources */,
+				D10000012F04000000000004 /* PromptIntegrityRepair.swift in Sources */,
+				D10000012F04000000000006 /* PromptSelection.swift in Sources */,
 				DA19691C2C3F3EAC00258481 /* Collection+Surrounding.swift in Sources */,
 				DA1969142C3F11D600258481 /* PreviewItemView.swift in Sources */,
 				DAA072D52C40AC52006DDFD2 /* HistoryListView.swift in Sources */,
 				DAB082962A2B7B850053E463 /* AppStoreReview.swift in Sources */,
 				2FB5BCA02CD8F73F008B33F4 /* ApplicationImage.swift in Sources */,
 				E10000012EE4000000000011 /* PromptModels.swift in Sources */,
+				C10000012F02000000000002 /* PromptSearchParser.swift in Sources */,
+				C10000012F02000000000004 /* PromptSnapshot.swift in Sources */,
+				C20000012F03000000000002 /* PromptSidebarView.swift in Sources */,
+				C20000012F03000000000004 /* PromptListView.swift in Sources */,
+				C20000012F03000000000006 /* PromptInspectorView.swift in Sources */,
+				C20000012F03000000000008 /* PromptSheets.swift in Sources */,
+				C20000012F0300000000000A /* PromptEditorView.swift in Sources */,
 				DA13D7D22C19F91B00FA9E23 /* Defaults.Keys+Names.swift in Sources */,
 				DA1969102C3F0AAC00258481 /* KeyShortcut.swift in Sources */,
 				DA9C3C622C20E1BF0056795D /* IgnoreRegexpsSettingsView.swift in Sources */,
@@ -1026,6 +1113,7 @@
 				E10000012EE4000000000013 /* PromptWorkspaceView.swift in Sources */,
 				DAA072D12C4089D3006DDFD2 /* VisualEffectView.swift in Sources */,
 				F20000012EE5000000000001 /* DebugPasteLog.swift in Sources */,
+				FA1000012F00000000000001 /* Diagnostics.swift in Sources */,
 				DA555F122CF155A8009608BD /* WrappingTextView.swift in Sources */,
 				DAC929D7297A0E8B00814F19 /* NSPasteboard.PasteboardType+Types.swift in Sources */,
 				DA9C3C472C20B91D0056795D /* String+Identifiable.swift in Sources */,

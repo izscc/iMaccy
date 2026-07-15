@@ -338,6 +338,35 @@ class MaccyUITests: XCTestCase {
     assertExists(items["foo bar"])
   }
 
+  func testPromptCreateEditAndCopyFlow() {
+    popUpWithMouse()
+    let promptScope = app.buttons["Prompt"].firstMatch
+    assertExists(promptScope)
+    promptScope.click()
+
+    let create = app.buttons["prompt-create-button"]
+    assertExists(create)
+    create.click()
+
+    let title = "Prompt \(UUID().uuidString)"
+    let body = "Create, edit, and copy this Prompt"
+    let titleField = app.textFields["prompt-editor-title"]
+    let bodyEditor = app.textViews["prompt-editor-body"]
+    assertExists(titleField)
+    titleField.click()
+    titleField.typeText(title)
+    bodyEditor.click()
+    bodyEditor.typeText(body)
+    app.buttons["prompt-editor-save"].click()
+
+    assertExists(app.staticTexts[title])
+    let copyButton = app.buttons["prompt-copy-button"]
+    assertExists(copyButton)
+    copyButton.click()
+    assertPasteboardStringEquals(body)
+    assertExists(app.buttons["prompt-create-button"])
+  }
+
   private func popUpWithHotkey() {
     simulatePopupHotkey()
     waitUntilPoppedUp()

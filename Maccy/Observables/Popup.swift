@@ -49,16 +49,27 @@ class Popup {
     app.activate(options: [.activateIgnoringOtherApps])
   }
 
-  func restoreFocusForPasting() {
-    if let previousApplicationPID,
-       let app = NSRunningApplication(processIdentifier: previousApplicationPID),
-       app.bundleIdentifier != Bundle.main.bundleIdentifier {
-      app.activate(options: [.activateIgnoringOtherApps])
+  func restoreFocusForPasting() async -> Bool {
+    guard let previousApplicationPID,
+          let target = NSRunningApplication(processIdentifier: previousApplicationPID),
+          target.bundleIdentifier != Bundle.main.bundleIdentifier else {
+      return false
     }
 
-    DispatchQueue.main.async {
-      NSApp.hide(nil)
+    guard target.activate(options: [.activateIgnoringOtherApps]) else {
+      return false
     }
+
+    NSApp.hide(nil)
+
+    for _ in 0..<15 where !target.isActive {
+      try? await Task.sleep(for: .milliseconds(20))
+      guard !Task.isCancelled else { return false }
+    }
+
+    // Give the target application one run-loop turn to restore its first responder.
+    try? await Task.sleep(for: .milliseconds(20))
+    return !Task.isCancelled && target.isActive
   }
 
   func resize(height: CGFloat) {

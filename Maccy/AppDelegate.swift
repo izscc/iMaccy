@@ -27,6 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private var statusItemVisibilityObserver: NSKeyValueObservation?
 
   func applicationWillFinishLaunching(_ notification: Notification) { // swiftlint:disable:this function_body_length
+    let coldLaunchInterval = Diagnostics.begin(Diagnostics.Name.coldLaunch)
     #if DEBUG
     if CommandLine.arguments.contains("enable-testing") {
       SPUUpdater(hostBundle: Bundle.main,
@@ -43,7 +44,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     AppState.shared.appDelegate = self
 
     Clipboard.shared.onNewCopy { History.shared.add($0) }
-    Clipboard.shared.start()
+    Task {
+      try? await History.shared.load()
+      AppState.shared.bootstrapPromptMetadata()
+      Clipboard.shared.start()
+      Diagnostics.end(Diagnostics.Name.coldLaunch, coldLaunchInterval)
+    }
 
     Task {
       for await _ in Defaults.updates(.clipboardCheckInterval, initial: false) {

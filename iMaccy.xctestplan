@@ -1,57 +1,39 @@
 {
-  "configurations" : [
+  "configurations": [
     {
-      "id" : "AF4E53A3-F52D-4A3E-B9EF-EF728B4C1AAA",
-      "name" : "Test Scheme Action",
-      "options" : {
-
-      }
+      "id": "AF4E53A3-F52D-4A3E-B9EF-EF728B4C1AAA",
+      "name": "Test Scheme Action",
+      "options": {}
     }
   ],
-  "defaultOptions" : {
-    "commandLineArgumentEntries" : [
+  "defaultOptions": {
+    "commandLineArgumentEntries": [
       {
-        "argument" : "enable-testing"
+        "argument": "enable-testing"
       }
     ],
-    "targetForVariableExpansion" : {
-      "containerPath" : "container:iMaccy.xcodeproj",
-      "identifier" : "DAEE38421E3DBEB100DD2966",
-      "name" : "iMaccy"
+    "targetForVariableExpansion": {
+      "containerPath": "container:iMaccy.xcodeproj",
+      "identifier": "DAEE38421E3DBEB100DD2966",
+      "name": "iMaccy"
     },
-    "testRepetitionMode" : "retryOnFailure"
+    "testRepetitionMode": "retryOnFailure"
   },
-  "testTargets" : [
+  "testTargets": [
     {
-      "skippedTests" : [
-        "HistoryTests",
-        "HistoryTests\/testAdding()",
-        "HistoryTests\/testAddingItemFromMaccy()",
-        "HistoryTests\/testAddingItemThatIsSupersededByExisting()",
-        "HistoryTests\/testAddingItemWithDifferentModifiedType()",
-        "HistoryTests\/testAddingSame()",
-        "HistoryTests\/testClearingAll()",
-        "HistoryTests\/testClearingUnpinned()",
-        "HistoryTests\/testDefaultIsEmpty()",
-        "HistoryTests\/testMaxSize()",
-        "HistoryTests\/testMaxSizeIgnoresPinned()",
-        "HistoryTests\/testMaxSizeIsChanged()",
-        "HistoryTests\/testModifiedAfterCopying()",
-        "HistoryTests\/testRemoving()"
-      ],
-      "target" : {
-        "containerPath" : "container:iMaccy.xcodeproj",
-        "identifier" : "DA360DAF1E3DF137005C6F6B",
-        "name" : "iMaccyTests"
+      "target": {
+        "containerPath": "container:iMaccy.xcodeproj",
+        "identifier": "DA360DAF1E3DF137005C6F6B",
+        "name": "iMaccyTests"
       }
     },
     {
-      "target" : {
-        "containerPath" : "container:iMaccy.xcodeproj",
-        "identifier" : "DA0EE7B5204657830025FC60",
-        "name" : "iMaccyUITests"
+      "target": {
+        "containerPath": "container:iMaccy.xcodeproj",
+        "identifier": "DA0EE7B5204657830025FC60",
+        "name": "iMaccyUITests"
       }
     }
   ],
-  "version" : 1
+  "version": 1
 }

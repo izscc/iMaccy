@@ -26,8 +26,8 @@ struct HistoryItemView: View {
       Text(verbatim: item.title)
     }
     .onTapGesture {
-      DebugPasteLog.write("HistoryItemView single tap \(item.title)")
-      appState.history.select(item)
+      DebugPasteLog.write("HistoryItemView")
+      appState.history.selectFromPointer(item)
     }
     .contextMenu {
       if item.item.promptPlainText != nil {
@@ -61,6 +61,9 @@ struct HistoryItemView: View {
     }
     .popover(isPresented: $item.showPreview, arrowEdge: .trailing) {
       PreviewItemView(item: item)
+    }
+    .task {
+      item.sizeImages()
     }
   }
 }

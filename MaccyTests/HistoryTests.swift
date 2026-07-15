@@ -36,19 +36,18 @@ class HistoryTests: XCTestCase {
     first.title = "xyz"
     first.application = "iTerm.app"
     let firstDecorator = history.add(first)
-    first.pin = "f"
+    history.togglePin(firstDecorator)
 
     let secondDecorator = history.add(historyItem("bar"))
 
     let third = historyItem("foo")
     third.application = "Xcode.app"
-    history.add(third)
+    let thirdDecorator = history.add(third)
 
-    XCTAssertEqual(history.items, [firstDecorator, secondDecorator])
+    XCTAssertEqual(history.items, [thirdDecorator, secondDecorator])
     XCTAssertTrue(history.items[0].item.lastCopiedAt > history.items[0].item.firstCopiedAt)
-    // TODO: This works in reality but fails in tests?!
-    // XCTAssertEqual(history.items[0].item.numberOfCopies, 2)
-    XCTAssertEqual(history.items[0].item.pin, "f")
+    XCTAssertEqual(history.items[0].item.numberOfCopies, 2)
+    XCTAssertNotNil(history.items[0].item.pin)
     XCTAssertEqual(history.items[0].item.title, "xyz")
     XCTAssertEqual(history.items[0].item.application, "iTerm.app")
   }
@@ -173,7 +172,7 @@ class HistoryTests: XCTestCase {
 
   func testClearingUnpinned() {
     let pinned = history.add(historyItem("foo"))
-    pinned.togglePin()
+    history.togglePin(pinned)
     history.add(historyItem("bar"))
     history.clear()
     XCTAssertEqual(history.items, [pinned])
@@ -201,7 +200,7 @@ class HistoryTests: XCTestCase {
 
     let item = history.add(historyItem("0"))
     items.append(item)
-    item.togglePin()
+    history.togglePin(item)
 
     for index in 1...11 {
       items.append(history.add(historyItem(String(index))))
@@ -287,17 +286,17 @@ class PromptPhase1Tests: XCTestCase {
     XCTAssertTrue(promptCategoryStore.categories.first?.isSystem == true)
   }
 
-  func testMoveToPromptCreatesPromptItem() {
+  func testMoveToPromptCreatesPromptItem() throws {
     let item = historyItem("整理这段需求，输出一份结构化总结")
 
-    let promptItem = promptOrganizer.moveToPrompt(item)
+    let promptItem = try promptOrganizer.moveToPrompt(item)
 
     XCTAssertNotNil(promptItem)
     XCTAssertEqual(promptLibrary.items.count, 1)
     XCTAssertEqual(promptLibrary.items.first?.plainText, "整理这段需求，输出一份结构化总结")
   }
 
-  func testMoveToPromptRejectsFileHistoryItem() {
+  func testMoveToPromptRejectsFileHistoryItem() throws {
     let url = URL(fileURLWithPath: "/tmp/imaccy.txt")
     let item = HistoryItem()
     Storage.shared.context.insert(item)
@@ -307,43 +306,43 @@ class PromptPhase1Tests: XCTestCase {
     ]
     item.title = item.generateTitle()
 
-    let promptItem = promptOrganizer.moveToPrompt(item)
+    let promptItem = try promptOrganizer.moveToPrompt(item)
 
     XCTAssertNil(promptItem)
     XCTAssertEqual(promptLibrary.items.count, 0)
   }
 
-  func testMoveToPromptDuplicateCanUpdateExisting() {
+  func testMoveToPromptDuplicateCanUpdateExisting() throws {
     promptOrganizer.duplicateDecisionHandler = { _ in .updateExisting }
     let first = historyItem("为这段代码写一个简洁的 review")
     let second = historyItem("  为这段代码写一个简洁的   review  ")
 
-    let firstPrompt = promptOrganizer.moveToPrompt(first)
-    let updatedPrompt = promptOrganizer.moveToPrompt(second)
+    let firstPrompt = try promptOrganizer.moveToPrompt(first)
+    let updatedPrompt = try promptOrganizer.moveToPrompt(second)
 
     XCTAssertEqual(promptLibrary.items.count, 1)
     XCTAssertEqual(firstPrompt?.id, updatedPrompt?.id)
-    XCTAssertEqual(promptLibrary.items.first?.usageCount, 2)
+    XCTAssertEqual(promptLibrary.items.first?.usageCount, 0)
   }
 
-  func testMoveToPromptDuplicateCanCreateNewCopy() {
+  func testMoveToPromptDuplicateCanCreateNewCopy() throws {
     promptOrganizer.duplicateDecisionHandler = { _ in .createNewCopy }
     let first = historyItem("给我一份发布公告")
     let second = historyItem("给我一份发布公告")
 
-    _ = promptOrganizer.moveToPrompt(first)
-    _ = promptOrganizer.moveToPrompt(second)
+    _ = try promptOrganizer.moveToPrompt(first)
+    _ = try promptOrganizer.moveToPrompt(second)
 
     XCTAssertEqual(promptLibrary.items.count, 2)
   }
 
-  func testMoveToPromptDuplicateCanCancel() {
+  func testMoveToPromptDuplicateCanCancel() throws {
     promptOrganizer.duplicateDecisionHandler = { _ in .cancel }
     let first = historyItem("把这份日报改写成周报摘要")
     let second = historyItem("把这份日报改写成周报摘要")
 
-    _ = promptOrganizer.moveToPrompt(first)
-    let cancelledPrompt = promptOrganizer.moveToPrompt(second)
+    _ = try promptOrganizer.moveToPrompt(first)
+    let cancelledPrompt = try promptOrganizer.moveToPrompt(second)
 
     XCTAssertNil(cancelledPrompt)
     XCTAssertEqual(promptLibrary.items.count, 1)
@@ -369,22 +368,26 @@ class PromptPhase1Tests: XCTestCase {
     promptLibrary.load()
 
     XCTAssertEqual(
-      promptLibrary.visibleItems(
+      promptVisibleItems(
+        library: promptLibrary,
+        categoryStore: promptCategoryStore,
+        tagStore: promptTagStore,
         searchQuery: "",
         favoritesOnly: true,
         selectedCategoryID: nil,
-        selectedTagIDs: [],
-        tagStore: promptTagStore
+        selectedTagIDs: []
       ).count,
       1
     )
     XCTAssertEqual(
-      promptLibrary.visibleItems(
+      promptVisibleItems(
+        library: promptLibrary,
+        categoryStore: promptCategoryStore,
+        tagStore: promptTagStore,
         searchQuery: "邮件",
         favoritesOnly: false,
         selectedCategoryID: nil,
-        selectedTagIDs: [],
-        tagStore: promptTagStore
+        selectedTagIDs: []
       ).first?.title,
       "写邮件"
     )
@@ -480,13 +483,13 @@ class PromptPhase2Tests: XCTestCase {
     Storage.shared.context.insert(prompt)
     try Storage.shared.context.save()
 
-    promptTagStore.setTagIDs(Set([tag.id]), for: prompt.id)
+    try promptTagStore.setTagIDs(Set([tag.id]), for: prompt.id)
     XCTAssertEqual(promptTagStore.tags(for: prompt.id).count, 1)
 
     try promptTagStore.renameTag(tag, to: "高频")
     XCTAssertEqual(promptTagStore.tags.first?.name, "高频")
 
-    promptTagStore.deleteTag(tag)
+    try promptTagStore.deleteTag(tag)
     XCTAssertEqual(promptTagStore.tags.count, 0)
     XCTAssertEqual(promptTagStore.links.count, 0)
   }
@@ -502,15 +505,15 @@ class PromptPhase2Tests: XCTestCase {
     let bookmark = try promptCategoryStore.createBookmark("运营")
     let historyItem = historyItem("为这个活动写一份宣传文案")
 
-    let prompt = try XCTUnwrap(promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id))
+    let prompt = try XCTUnwrap(try promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id))
     XCTAssertEqual(prompt.categoryID, bookmark.id)
 
     let firstTag = try promptTagStore.createTag("营销")
     let secondTag = try promptTagStore.createTag("文案")
-    promptOrganizer.setTagIDs(Set([firstTag.id, secondTag.id]), for: prompt)
+    try promptOrganizer.setTagIDs(Set([firstTag.id, secondTag.id]), for: prompt)
     XCTAssertEqual(Set(promptTagStore.tags(for: prompt.id).map(\.name)), Set(["营销", "文案"]))
 
-    promptOrganizer.removeTag(firstTag, from: prompt)
+    try promptOrganizer.removeTag(firstTag, from: prompt)
     XCTAssertEqual(promptTagStore.tags(for: prompt.id).map(\.name), ["文案"])
   }
 
@@ -538,16 +541,18 @@ class PromptPhase2Tests: XCTestCase {
     Storage.shared.context.insert(second)
     try Storage.shared.context.save()
 
-    promptTagStore.setTagIDs(Set([tagA.id, tagB.id]), for: first.id)
-    promptTagStore.setTagIDs(Set([tagA.id]), for: second.id)
+    try promptTagStore.setTagIDs(Set([tagA.id, tagB.id]), for: first.id)
+    try promptTagStore.setTagIDs(Set([tagA.id]), for: second.id)
     promptLibrary.load()
 
-    let result = promptLibrary.visibleItems(
+    let result = promptVisibleItems(
+      library: promptLibrary,
+      categoryStore: promptCategoryStore,
+      tagStore: promptTagStore,
       searchQuery: "代码",
       favoritesOnly: true,
       selectedCategoryID: dev.id,
-      selectedTagIDs: Set([tagA.id, tagB.id]),
-      tagStore: promptTagStore
+      selectedTagIDs: Set([tagA.id, tagB.id])
     )
     XCTAssertEqual(result.map(\.title), ["代码审查"])
   }
@@ -623,7 +628,7 @@ class PromptPhase3Tests: XCTestCase {
     let bookmark = try promptCategoryStore.createBookmark("开发")
     let historyItem = historyItem("帮我 review 这个 PR")
 
-    _ = promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id)
+    _ = try promptOrganizer.moveToPrompt(historyItem, targetCategoryID: bookmark.id)
     promptCategoryStore.load()
 
     XCTAssertNotNil(promptCategoryStore.bookmarkCategories.first(where: { $0.id == bookmark.id })?.lastAssignedAt)
@@ -653,41 +658,45 @@ class PromptPhase3Tests: XCTestCase {
     try Storage.shared.context.save()
     promptLibrary.load()
 
-    promptOrganizer.addTags([tagCode.id, tagHigh.id], to: [first, second])
+    try promptOrganizer.addTags([tagCode.id, tagHigh.id], to: [first, second])
     XCTAssertEqual(Set(promptTagStore.tags(for: first.id).map(\.name)), Set(["代码", "高优"]))
     XCTAssertEqual(Set(promptTagStore.tags(for: second.id).map(\.name)), Set(["代码", "高优"]))
 
-    promptOrganizer.removeTags([tagHigh.id], from: [second])
+    try promptOrganizer.removeTags([tagHigh.id], from: [second])
     XCTAssertEqual(Set(promptTagStore.tags(for: second.id).map(\.name)), Set(["代码"]))
 
-    promptOrganizer.assignPrompts([first, second], to: ops.id)
+    try promptOrganizer.assignPrompts([first, second], to: ops.id)
     XCTAssertEqual(first.categoryID, ops.id)
     XCTAssertEqual(second.categoryID, ops.id)
     XCTAssertEqual(promptCategoryStore.recentBookmarks().first?.id, ops.id)
 
-    promptOrganizer.setFavorite(true, for: [first, second])
+    try promptOrganizer.setFavorite(true, for: [first, second])
     XCTAssertTrue(first.isFavorite)
     XCTAssertTrue(second.isFavorite)
 
-    let hashSearch = promptLibrary.visibleItems(
+    let hashSearch = promptVisibleItems(
+      library: promptLibrary,
+      categoryStore: promptCategoryStore,
+      tagStore: promptTagStore,
       searchQuery: "#代码 review",
       favoritesOnly: false,
       selectedCategoryID: ops.id,
-      selectedTagIDs: [],
-      tagStore: promptTagStore
+      selectedTagIDs: []
     )
     XCTAssertEqual(hashSearch.map(\.title), ["代码审查"])
 
-    let andSearch = promptLibrary.visibleItems(
+    let andSearch = promptVisibleItems(
+      library: promptLibrary,
+      categoryStore: promptCategoryStore,
+      tagStore: promptTagStore,
       searchQuery: "#代码 #高优",
       favoritesOnly: false,
       selectedCategoryID: ops.id,
-      selectedTagIDs: [],
-      tagStore: promptTagStore
+      selectedTagIDs: []
     )
     XCTAssertEqual(andSearch.map(\.title), ["代码审查"])
 
-    promptOrganizer.deletePrompts([first, second])
+    try promptOrganizer.deletePrompts([first, second])
     XCTAssertEqual(promptLibrary.items.count, 0)
   }
 
@@ -712,6 +721,29 @@ class PromptPhase3Tests: XCTestCase {
     item.title = item.generateTitle()
     return item
   }
+}
+
+@MainActor
+private func promptVisibleItems(
+  library: PromptLibrary,
+  categoryStore: PromptCategoryStore,
+  tagStore: PromptTagStore,
+  searchQuery: String,
+  favoritesOnly: Bool,
+  selectedCategoryID: UUID?,
+  selectedTagIDs: Set<UUID>
+) -> [PromptItem] {
+  PromptSnapshot(
+    items: library.items,
+    categories: categoryStore.categories,
+    tags: tagStore.tags,
+    links: tagStore.links
+  ).visibleItems(
+    searchQuery: searchQuery,
+    favoritesOnly: favoritesOnly,
+    categoryFilter: selectedCategoryID.map(PromptCategoryFilter.category) ?? .all,
+    selectedTagIDs: selectedTagIDs
+  )
 }
 
 final class PopupWindowSizePolicyTests: XCTestCase {

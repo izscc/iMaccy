@@ -10,6 +10,7 @@ final class PromptItem {
   var isFavorite: Bool
   var createdAt: Date
   var updatedAt: Date
+  var lastUsedAt: Date?
   var usageCount: Int
   var sourceHistoryItemID: String?
   var categoryID: UUID?
@@ -22,6 +23,7 @@ final class PromptItem {
     isFavorite: Bool = false,
     createdAt: Date = .now,
     updatedAt: Date = .now,
+    lastUsedAt: Date? = nil,
     usageCount: Int = 0,
     sourceHistoryItemID: String? = nil,
     categoryID: UUID? = nil
@@ -33,6 +35,7 @@ final class PromptItem {
     self.isFavorite = isFavorite
     self.createdAt = createdAt
     self.updatedAt = updatedAt
+    self.lastUsedAt = lastUsedAt
     self.usageCount = usageCount
     self.sourceHistoryItemID = sourceHistoryItemID
     self.categoryID = categoryID
