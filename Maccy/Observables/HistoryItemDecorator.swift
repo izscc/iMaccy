@@ -128,12 +128,13 @@ class HistoryItemDecorator: Identifiable, Hashable {
   private func synchronizeItemPin() {
     _ = withObservationTracking {
       item.pin
-    } onChange: {
-      DispatchQueue.main.async {
-        if let pin = self.item.pin {
-          self.shortcuts = KeyShortcut.create(character: pin)
+    } onChange: { [weak self] in
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        if let pin = item.pin {
+          shortcuts = KeyShortcut.create(character: pin)
         }
-        self.synchronizeItemPin()
+        synchronizeItemPin()
       }
     }
   }
@@ -141,10 +142,11 @@ class HistoryItemDecorator: Identifiable, Hashable {
   private func synchronizeItemTitle() {
     _ = withObservationTracking {
       item.title
-    } onChange: {
-      DispatchQueue.main.async {
-        self.title = self.item.title
-        self.synchronizeItemTitle()
+    } onChange: { [weak self] in
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        title = item.title
+        synchronizeItemTitle()
       }
     }
   }
