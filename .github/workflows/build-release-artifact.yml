@@ -1,6 +1,9 @@
 name: Build macOS release artifact
 
 on:
+  push:
+    branches:
+      - feature/stability-prompt-upgrade
   workflow_dispatch:
 
 permissions:
